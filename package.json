@@ -16,6 +16,7 @@
     "demo": "node scripts/demo-year.mjs > demo-backup.json"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.2",
     "dexie": "^4.4.7",
     "dexie-react-hooks": "^4.4.0",
     "framer-motion": "^11.18.2",
