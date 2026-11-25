@@ -9,6 +9,7 @@ import { KIND_META, KIND_ORDER } from '../lib/catalog';
 import { parseMoney } from '../domain/money';
 import { isStandalone } from '../lib/app';
 import { useSpring } from '../lib/motion';
+import { useRestore } from '../ui/useRestore';
 import type { AccountKind } from '../domain/types';
 
 type Step = 'install' | 'welcome' | 'account' | 'prefs';
@@ -21,6 +22,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   const [symbol, setSymbol] = useState('Rs');
   const [target, setTarget] = useState('');
   const t = useSpring();
+  const restore = useRestore({ confirmReplace: false, onDone });
   const balParsed = bal.trim() === '' ? 0 : parseMoney(bal);
   const targetParsed = target.trim() === '' ? null : parseMoney(target);
 
@@ -80,8 +82,10 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
                   <Feature title="A real monthly audit" body="See where it went and what you saved." />
                 </div>
               </div>
-              <div className="px-6">
+              <div className="flex flex-col gap-1 px-6">
                 <Button block onClick={() => setStep('account')}>Get Started</Button>
+                <Button variant="plain" block onClick={restore.open}>Restore from a Backup</Button>
+                {restore.input}
               </div>
             </>,
           )}
