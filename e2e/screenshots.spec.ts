@@ -92,6 +92,51 @@ for (const scheme of SCHEMES) {
     await page.getByRole('dialog', { name: 'New account' }).getByRole('button', { name: 'Cancel' }).click();
 
     await page.getByRole('tab', { name: 'Debts' }).click();
+    await shot(page, scheme, '12-money-debts-empty');
+
+    // debts: borrowed with cash + partly repaid, lent without cash and overdue, one due soon, one settled
+    const addDebt = async (o: { lent?: boolean; person: string; amount: string; start?: string; due?: string; cash?: boolean; shotForm?: boolean }) => {
+      await page.getByRole('button', { name: 'Add debt', exact: true }).click();
+      const f = page.getByRole('dialog', { name: 'New debt' });
+      if (o.lent) await f.getByRole('tab', { name: 'I lent' }).click();
+      await f.getByLabel('Person').fill(o.person);
+      await f.getByLabel('Amount').fill(o.amount);
+      if (o.start) await f.getByLabel('Start date').fill(o.start);
+      if (o.due) await f.getByLabel('Due date').fill(o.due);
+      if (o.cash === false) await f.getByRole('switch', { name: 'Record the cash' }).click();
+      if (o.shotForm) {
+        await f.getByLabel('Amount').blur();
+        await shot(page, scheme, '12b-new-debt');
+      }
+      await f.getByRole('button', { name: 'Add', exact: true }).click();
+      await expect(f).toBeHidden();
+    };
+    const pay = async (label: string, amount: string, shotIt = false) => {
+      await page.getByRole('button', { name: label }).click();
+      const d = page.getByRole('dialog', { name: 'Debt detail' });
+      await d.getByRole('button', { name: /Record (Repayment|Collection)/ }).click();
+      const p = page.getByRole('dialog', { name: 'Record payment' });
+      await p.getByLabel('Payment amount').fill(amount);
+      if (shotIt) {
+        await p.getByLabel('Payment amount').blur();
+        await shot(page, scheme, '12d-record-payment');
+      }
+      await p.getByRole('button', { name: 'Save', exact: true }).click();
+      await expect(p).toBeHidden();
+      if (shotIt) await shot(page, scheme, '12c-debt-detail');
+      await d.getByRole('button', { name: 'Close' }).click();
+    };
+    const dayOffset = (n: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() + n);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+    await addDebt({ person: 'Hari Dai', amount: '50000', due: dayOffset(40), shotForm: true });
+    await pay('Hari Dai, I owe', '20000', true);
+    await addDebt({ lent: true, person: 'Sita', amount: '5000', start: dayOffset(-20), due: dayOffset(-3), cash: false });
+    await addDebt({ person: 'Kirana Pasal', amount: '2350', due: dayOffset(4), cash: false });
+    await addDebt({ lent: true, person: 'Bikash', amount: '1500' });
+    await pay('Bikash, owes me', '1500');
     await shot(page, scheme, '12-money-debts');
 
     await page.getByRole('tab', { name: 'Dreams' }).click();
