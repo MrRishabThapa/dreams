@@ -11,7 +11,7 @@ test('offline: fund a dream with a linked transfer (balances move, net worth unc
 
   // new dream
   await page.getByRole('tab', { name: 'Dreams' }).click();
-  await page.getByRole('button', { name: 'New Dream' }).click();
+  await page.getByRole('button', { name: 'New Dream', exact: true }).click();
   const form = page.getByRole('dialog', { name: 'New dream' });
   await form.getByLabel('Dream name').fill('Japan trip');
   await form.getByLabel('Target amount').fill('120000');
