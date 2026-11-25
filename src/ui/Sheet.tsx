@@ -68,13 +68,15 @@ interface SheetProps {
   label?: string;
   /** dismissing by drag or backdrop is blocked (e.g. unsaved changes) */
   onAttemptDismiss?: () => boolean;
+  /** content fills the panel as a flex column instead of scrolling (child decides what scrolls) */
+  fill?: boolean;
 }
 
 export function Sheet(props: SheetProps) {
   return createPortal(<AnimatePresence>{props.open && <SheetPanel key="sheet" {...props} />}</AnimatePresence>, document.body);
 }
 
-function SheetPanel({ onClose, title, left, right, detents = ['large'], initial, children, z = 0, label, onAttemptDismiss }: SheetProps) {
+function SheetPanel({ onClose, title, left, right, detents = ['large'], initial, children, z = 0, label, onAttemptDismiss, fill }: SheetProps) {
   const controls = useDragControls();
   const t = useSpring();
   const reduce = useReducedMotion();
@@ -165,8 +167,8 @@ function SheetPanel({ onClose, title, left, right, detents = ['large'], initial,
           )}
         </div>
         <div
-          className="sheet-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain"
-          style={{ paddingBottom: `calc(max(var(--kb), var(--safe-bottom)) + ${offset}px + 16px)` }}
+          className={fill ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : 'sheet-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain'}
+          style={{ paddingBottom: `calc(max(var(--kb), var(--safe-bottom)) + ${offset}px + ${fill ? 8 : 16}px)` }}
         >
           {children}
         </div>
