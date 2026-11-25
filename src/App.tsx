@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { AppProvider, useApp, type SheetEntry } from './lib/app';
@@ -76,14 +76,14 @@ function Shell() {
 
   return (
     <>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.main key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
-          {tab === 'home' && <Home />}
-          {tab === 'money' && <MoneyScreen />}
-          {tab === 'dreams' && <DreamsScreen />}
-          {tab === 'audit' && <AuditScreen />}
-        </motion.main>
-      </AnimatePresence>
+      {/* Keyed fade-in only. No exit/wait: AnimatePresence mode="wait" could stall on rapid
+          tab switches and leave the content blank. */}
+      <motion.main key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.18 }}>
+        {tab === 'home' && <Home />}
+        {tab === 'money' && <MoneyScreen />}
+        {tab === 'dreams' && <DreamsScreen />}
+        {tab === 'audit' && <AuditScreen />}
+      </motion.main>
       <TabBar tab={tab} onTab={go} onAdd={() => openSheet({ kind: 'add' })} />
       {sheets.map((s, i) => (
         <SheetFor key={s.key} entry={s} z={i} />
