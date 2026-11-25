@@ -8,6 +8,7 @@ Rishab's private, offline-first money app for iPhone, installed as a PWA.
 - Dreams: savings goals with progress, pace and ETA
 - A monthly audit with a reconciled net-worth walk, insights, reflection and Close month
 - Backup / restore (JSON), CSV and text export, app lock with PIN
+- Optional Supabase sync (email + password, last-write-wins, offline-first)
 - Works fully offline. All money is integer paisa.
 
 ## Develop
@@ -26,8 +27,9 @@ On Arch Linux, run `scripts/setup-webkit-arch.sh` once so Playwright's WebKit ca
 ## Layout
 
 - `src/domain/`: pure rules (ledger, debts, dreams, audit). Unit-tested.
-- `src/db/`: Dexie database, the single write path (`repo.ts`), backup, sync groundwork.
+- `src/db/`: Dexie database, the single write path (`repo.ts`), backup, sync bookkeeping.
+- `src/sync/`: Supabase sync (engine, lazy supabase-js adapter, controller). Needs `.env.local` (see `.env.example`).
 - `src/ui/`, `src/sheets/`, `src/screens/`: the iOS-style interface.
-- `supabase/schema.sql`: database for the future sync (not used yet).
+- `supabase/schema.sql`: the Supabase database (tables, RLS, stale-write trigger).
 
 Deploying and installing: see [DEPLOY.md](DEPLOY.md).
