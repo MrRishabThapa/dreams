@@ -114,6 +114,11 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByTestId('net-worth')).toBeVisible();
     const restoreMs = Date.now() - t0;
 
+    // measure the app, not the one-time service-worker precache download on first visit
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+    });
+    await page.waitForTimeout(500);
     const timed = async (fn: () => Promise<void>) => {
       const s = Date.now();
       await fn();
