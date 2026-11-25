@@ -76,5 +76,39 @@ for (const scheme of ['light', 'dark'] as const) {
     const s = page.getByRole('dialog', { name: 'Settings' });
     await s.getByRole('button', { name: 'Restore from Backup' }).scrollIntoViewIfNeeded();
     await shot(page, scheme, '29-settings-backup');
+
+    // Phase 6: settings top, categories, app lock, lock screen
+    await s.getByRole('button', { name: /^App Lock/ }).scrollIntoViewIfNeeded();
+    await page.evaluate(() => document.querySelector('[aria-label="Settings"] .sheet-scroll')?.scrollTo(0, 0));
+    await shot(page, scheme, '30-settings');
+    await s.getByRole('button', { name: 'Categories' }).click();
+    await shot(page, scheme, '31-categories');
+    await page.getByRole('dialog', { name: 'Categories' }).getByRole('button', { name: 'Shopping', exact: true }).click();
+    await shot(page, scheme, '32-category-edit');
+    await page.getByRole('dialog', { name: 'Edit category' }).getByRole('button', { name: 'Cancel' }).click();
+    await page.getByRole('dialog', { name: 'Categories' }).getByRole('button', { name: 'Done' }).click();
+    await s.getByRole('button', { name: /^App Lock/ }).click();
+    const lockSheet = page.getByRole('dialog', { name: 'App Lock' });
+    await shot(page, scheme, '33-app-lock-off');
+    await lockSheet.getByRole('button', { name: 'Turn On App Lock' }).click();
+    const pinPad = () => page.getByRole('group', { name: 'PIN keypad' }).last();
+    for (const d of '24') await pinPad().getByRole('button', { name: d, exact: true }).click();
+    await shot(page, scheme, '34-app-lock-choose');
+    for (const d of '68') await pinPad().getByRole('button', { name: d, exact: true }).click();
+    for (const d of '2468') await pinPad().getByRole('button', { name: d, exact: true }).click();
+    await lockSheet.getByText('Change PIN').waitFor();
+    await shot(page, scheme, '35-app-lock-on');
+    await lockSheet.getByRole('button', { name: 'Immediately' }).click();
+    await lockSheet.getByRole('button', { name: 'Done' }).click();
+    await s.getByRole('button', { name: 'Done' }).click();
+    await page.evaluate(() => {
+      for (const st of ['hidden', 'visible']) {
+        Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => st });
+        document.dispatchEvent(new Event('visibilitychange'));
+      }
+    });
+    await page.getByRole('dialog', { name: 'Dreams is locked' }).waitFor();
+    for (const d of '13') await pinPad().getByRole('button', { name: d, exact: true }).click();
+    await shot(page, scheme, '36-lock-screen');
   });
 }
