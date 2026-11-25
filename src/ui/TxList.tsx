@@ -9,7 +9,7 @@ import { useApp } from '../lib/app';
 import { useToast } from './Toast';
 import { restore, softDelete } from '../db/repo';
 
-export function txTitle(t: Transaction, accounts: Map<string, Account>, debts?: Map<string, Debt>): string {
+export function txTitle(t: Transaction, accounts: Map<string, Account>, debts?: Map<string, Debt>, categories?: Map<string, Category>): string {
   if (t.debt_id) {
     const d = debts?.get(t.debt_id);
     const who = d?.person ?? 'someone';
@@ -18,7 +18,8 @@ export function txTitle(t: Transaction, accounts: Map<string, Account>, debts?: 
   }
   if (t.type === 'transfer') return `${accounts.get(t.account_id)?.name ?? '—'} → ${accounts.get(t.to_account_id ?? '')?.name ?? '—'}`;
   if (t.type === 'adjust') return accounts.get(t.account_id)?.kind === 'investment' ? 'Value update' : 'Balance correction';
-  return t.category_name ?? (t.type === 'income' ? 'Income' : 'Expense');
+  // the live category name wins, so renaming a category renames its history too
+  return (t.category_id && categories?.get(t.category_id)?.name) || t.category_name || (t.type === 'income' ? 'Income' : 'Expense');
 }
 
 /** Amount as seen from `perspective` account (for account detail), else global. */
@@ -49,7 +50,7 @@ export function TxRow({ t, accounts, categories, debts, perspective }: { t: Tran
       {tile}
       <div className="row-body flex min-h-[56px] min-w-0 flex-1 items-center gap-2 py-2 pr-4">
         <div className="min-w-0 flex-1">
-          <div className="truncate text-body">{txTitle(t, accounts, debts)}</div>
+          <div className="truncate text-body">{txTitle(t, accounts, debts, categories)}</div>
           {sub && <div className="truncate text-footnote text-label-2">{sub}</div>}
         </div>
         <Money
@@ -92,7 +93,7 @@ export function TxGroups({ txs, accounts, categories, debts, perspective }: { tx
                 {g.items.map((t) => {
                   // Debt movements are managed from the debt itself, so the debt and its cash never drift apart.
                   const open = () => (t.debt_id ? openSheet({ kind: 'debtDetail', id: t.debt_id }) : openSheet({ kind: 'add', tx: t }));
-                  const title = txTitle(t, accounts, debts);
+                  const title = txTitle(t, accounts, debts, categories);
                   return (
                     <motion.div key={t.id} layout="position" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="sep">
                       <SwipeRow onDelete={t.debt_id ? undefined : () => void del(t)} onEdit={t.debt_id ? undefined : open}>
