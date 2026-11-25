@@ -1,4 +1,5 @@
 import { db, type SyncedTable } from './db';
+import { emitWrite } from './events';
 import type { Account, Audit, Base, Category, Debt, Dream, DreamEntry, ISODate, Minor, Month, Transaction, UserSettings } from '../domain/types';
 import { DEFAULT_CATEGORIES, KIND_META } from '../lib/catalog';
 import { today } from '../domain/dates';
@@ -26,11 +27,13 @@ export async function save<T extends SyncedTable>(table: T, row: Partial<RowOf<T
     dirty: 1,
   } as RowOf<T>;
   await (db[table] as any).put(full);
+  emitWrite();
   return full;
 }
 
 export async function patch<T extends SyncedTable>(table: T, id: string, changes: Partial<RowOf<T>>): Promise<void> {
   await (db[table] as any).update(id, { ...changes, updated_at: now(), dirty: 1 });
+  emitWrite();
 }
 
 export async function softDelete(table: SyncedTable, ids: string[]): Promise<void> {
@@ -38,6 +41,7 @@ export async function softDelete(table: SyncedTable, ids: string[]): Promise<voi
   await db.transaction('rw', db[table], async () => {
     for (const id of ids) await (db[table] as any).update(id, { deleted_at: t, updated_at: t, dirty: 1 });
   });
+  emitWrite();
 }
 
 export async function restore(table: SyncedTable, ids: string[]): Promise<void> {
@@ -45,6 +49,7 @@ export async function restore(table: SyncedTable, ids: string[]): Promise<void> 
   await db.transaction('rw', db[table], async () => {
     for (const id of ids) await (db[table] as any).update(id, { deleted_at: null, updated_at: t, dirty: 1 });
   });
+  emitWrite();
 }
 
 /* ---------- Meta (local-only prefs) ---------- */
@@ -59,9 +64,10 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
 
 /* ---------- Settings ---------- */
 
+/** The settings row. With sync, two devices may each have made one: the oldest wins everywhere. */
 export async function getSettings(): Promise<UserSettings | undefined> {
-  const all = await db.user_settings.toArray();
-  return all.find((s) => !s.deleted_at);
+  const all = (await db.user_settings.toArray()).filter((s) => !s.deleted_at);
+  return all.sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))[0];
 }
 
 export async function ensureSettings(): Promise<UserSettings> {
