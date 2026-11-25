@@ -14,6 +14,7 @@ export default {
         'label-3': 'var(--label-3)',
         separator: 'var(--separator)',
         accent: 'var(--accent)',
+        'on-accent': 'var(--on-accent)',
         income: 'var(--income)',
         expense: 'var(--expense)',
         warn: 'var(--warn)',
