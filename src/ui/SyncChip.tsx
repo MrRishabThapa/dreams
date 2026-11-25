@@ -12,14 +12,17 @@ export function SyncChip({ onPress, className = '' }: { onPress?: () => void; cl
     offline: { icon: <CloudOff size={13} />, text: pending ? `Offline · ${pending} pending` : 'Offline', tone: 'text-label-2' },
     error: { icon: <CloudAlert size={13} />, text: 'Sync error', tone: 'text-expense' },
   }[chip];
+  const cls = `chrome inline-flex min-h-[28px] items-center gap-1.5 rounded-full bg-fill px-2.5 py-1 text-footnote font-medium ${map.tone} ${className}`;
+  // a plain label inside other controls (no nested buttons); a button only when it does something
+  if (!onPress)
+    return (
+      <span data-testid="sync-chip" className={cls}>
+        {map.icon}
+        {map.text}
+      </span>
+    );
   return (
-    <button
-      type="button"
-      onClick={onPress}
-      data-testid="sync-chip"
-      aria-label={`Sync status: ${map.text}`}
-      className={`chrome inline-flex min-h-[28px] items-center gap-1.5 rounded-full bg-fill px-2.5 py-1 text-footnote font-medium ${map.tone} ${className}`}
-    >
+    <button type="button" onClick={onPress} data-testid="sync-chip" aria-label={`Sync status: ${map.text}`} className={cls}>
       {map.icon}
       {map.text}
     </button>
