@@ -14,16 +14,17 @@ export function SyncBanner() {
     <AnimatePresence>
       {show && (
         <motion.div
-          initial={{ y: -80, opacity: 0 }}
+          initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -80, opacity: 0 }}
+          exit={{ y: 80, opacity: 0 }}
           transition={t}
-          className="fixed inset-x-0 top-0 z-[180] flex justify-center px-4"
-          style={{ paddingTop: 'calc(var(--safe-top) + 8px)' }}
+          className="pointer-events-none fixed inset-x-0 z-[45] flex justify-center px-4"
+          // above the tab bar, so it never covers the navigation bar's buttons
+          style={{ bottom: 'calc(var(--tabbar-h) + var(--safe-bottom) + 14px)' }}
           role="status"
           aria-label="Sync changes"
         >
-          <div className="flex min-h-[44px] items-center gap-1 rounded-full bg-[var(--toast-bg)] py-1.5 pl-5 pr-1.5 text-[15px] font-medium text-[var(--toast-fg)] shadow-float">
+          <div className="pointer-events-auto flex min-h-[44px] items-center gap-1 rounded-full bg-[var(--toast-bg)] py-1.5 pl-5 pr-1.5 text-[15px] font-medium text-[var(--toast-fg)] shadow-float">
             <span className="mr-1">You’re online. Sync {s.pending} change{s.pending === 1 ? '' : 's'}?</span>
             <button type="button" className="min-h-[36px] rounded-full bg-accent px-4 font-semibold text-on-accent" onClick={() => void syncNow()}>
               Sync
