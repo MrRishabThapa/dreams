@@ -13,6 +13,7 @@ import { Onboarding } from './screens/Onboarding';
 import { AddSheet } from './sheets/AddSheet';
 import { AccountDetailSheet, AccountSheet, CorrectSheet, PickAccountSheet } from './sheets/AccountSheets';
 import { SettingsSheet } from './sheets/SettingsSheet';
+import { DebtDetailSheet, DebtSheet, PaymentSheet } from './sheets/DebtSheets';
 import { getMeta } from './db/repo';
 import { db } from './db/db';
 
@@ -109,5 +110,11 @@ function SheetFor({ entry, z }: { entry: SheetEntry; z: number }) {
       return <PickAccountSheet open={open} onClose={close} z={z} title={req.title} exclude={req.exclude} onPick={req.onPick} />;
     case 'settings':
       return <SettingsSheet open={open} onClose={close} z={z} />;
+    case 'debt':
+      return <DebtSheet open={open} onClose={close} z={z} debt={req.debt} direction={req.direction} />;
+    case 'debtDetail':
+      return <DebtDetailSheet open={open} onClose={close} z={z} id={req.id} />;
+    case 'payment':
+      return <PaymentSheet open={open} onClose={close} z={z} debtId={req.debtId} />;
   }
 }
