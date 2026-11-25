@@ -6,7 +6,7 @@ export function Chip({ active, icon, children, className = '', ...rest }: { acti
     <button
       type="button"
       className={`pressable inline-flex h-9 max-w-full shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[15px] font-medium ${
-        active ? 'bg-accent text-white' : 'bg-surface text-label shadow-card'
+        active ? 'bg-accent text-on-accent' : 'bg-surface text-label shadow-card'
       } ${className}`}
       {...rest}
     >
@@ -24,7 +24,7 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 ${checked ? 'bg-income' : 'bg-fill'}`}
+      className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 ${checked ? 'bg-accent' : 'bg-fill'}`}
     >
       <motion.span
         className="absolute left-[2px] top-[2px] h-[27px] w-[27px] rounded-full bg-white shadow-[0_3px_8px_rgba(0,0,0,0.15),0_3px_1px_rgba(0,0,0,0.06)]"
