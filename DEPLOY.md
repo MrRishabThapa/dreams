@@ -19,9 +19,17 @@ Pick one of these. Both give you a `https://dreams-xxx.pages.dev` address.
 
 ### Option A: from this computer (no GitHub needed)
 
+Sync needs the Supabase URL and publishable key **at build time**. Locally they come from
+`.env.local` (gitignored; copy `.env.example` and fill it in if it's missing):
+
+```
+VITE_SUPABASE_URL=https://cshqseusqlbwhgpfynyf.supabase.co
+VITE_SUPABASE_ANON_KEY=sb_publishable_…   # the publishable key, never the secret/service-role key
+```
+
 ```bash
 npx wrangler login                 # opens the browser once to sign in to Cloudflare
-npm run deploy                     # builds, then uploads dist/ to the "dreams" Pages project
+npm run deploy                     # builds (reading .env.local), then uploads dist/ to the "dreams" Pages project
 ```
 
 The first run asks to create the `dreams` project: accept, and choose `main` as the production branch.
@@ -35,10 +43,17 @@ Every later `npm run deploy` publishes a new version.
    - Framework preset: **None**
    - Build command: `npm run build`
    - Build output directory: `dist`
-   - Environment variable: `NODE_VERSION` = `22`
+   - Environment variables (Production **and** Preview; they're read at build time, so set them
+     before the first build and redeploy after changing them):
+     - `NODE_VERSION` = `22`
+     - `VITE_SUPABASE_URL` = `https://cshqseusqlbwhgpfynyf.supabase.co`
+     - `VITE_SUPABASE_ANON_KEY` = the **publishable** key (`sb_publishable_…`). Both are public by
+       design and ship in the app; never put the secret/service-role key or the database password here.
 4. Save and deploy.
 
-`public/_headers` (security headers, CSP, caching) is picked up automatically in both cases.
+`public/_headers` (security headers, CSP, caching) is picked up automatically in both cases. The build
+fills the Supabase origin into the CSP's `connect-src`, so the app can talk to that one project only.
+If a build has no Supabase variables, Dreams still works fully; Settings → Sync just says it isn't set up.
 
 ## 3. Install on the iPhone (iOS 16)
 
@@ -64,11 +79,28 @@ pick the `.json` file (from Files or iCloud Drive).
 Run `npm run deploy` again (or push, with option B). Next time Dreams opens online it shows
 **Update available · Reload**; tap Reload. Your data is untouched by updates.
 
-## Later: sync (Phase 5)
+## Sync (v1.1): the first real sync
 
-Not part of v1.0. When it's added:
-1. Create a Supabase project, open the SQL editor and run `supabase/schema.sql`.
-2. Authentication → add your one user, then turn **off** public sign-ups.
-3. Copy `.env.example` to `.env` and paste the project URL and **anon** key there yourself
-   (never the service-role key, never in chat).
-4. Add the project origin to `connect-src` in `public/_headers` and in the CSP `<meta>` in `index.html`.
+Supabase is already set up (schema run, one user, sign-ups off). On the iPhone:
+
+1. Open Dreams (from the Home Screen icon) while online.
+2. **Settings → Sync → Email + Password** of the Supabase user → **Sign In**. There's no sign-up
+   and no email link: the password is typed in the app. Dreams uploads everything right away.
+   The status reads **Synced** with **0** changes to send.
+3. Optional: turn on **Auto-sync** (off by default). Off: when you come back online with
+   changes, Dreams asks "You're online. Sync N changes?". On: it syncs on open, when you come
+   back online, and a few seconds after each change.
+4. Check it reached Supabase: dashboard → Table Editor → `transactions` shows your rows.
+
+**Second device** (or after reinstalling): on the welcome screen tap **Sign In to Sync** *before*
+setting anything up. Dreams pulls everything and opens straight into your data.
+
+**Good to know**
+- Everything still works offline; changes wait on the phone and sync later. Nothing is lost if a
+  sync fails halfway: the next sync finishes it.
+- Edits on two devices: the most recent edit wins (by edit time). An older offline edit never
+  overwrites a newer one.
+- **Sign Out** only stops syncing on that device. It never deletes local data.
+- Free Supabase projects pause after about a week without use. Dreams then says the project is
+  paused: open supabase.com → the `dreams` project → **Restore**, then Sync again.
+- Keep the occasional JSON backup too (Settings → Back Up Now); it's independent of Supabase.
