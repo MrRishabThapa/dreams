@@ -1,7 +1,7 @@
 {
   "name": "dreams",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "scripts/webkit-env.sh playwright test",
-    "icons": "scripts/webkit-env.sh node scripts/make-icons.mjs"
+    "icons": "scripts/webkit-env.sh node scripts/make-icons.mjs",
+    "deploy": "npm run build && npx wrangler pages deploy dist --project-name dreams",
+    "demo": "node scripts/demo-year.mjs > demo-backup.json"
   },
   "dependencies": {
     "dexie": "^4.4.7",
@@ -36,5 +38,8 @@
     "vite-plugin-pwa": "^1.3.0",
     "vitest": "^3.2.7",
     "workbox-window": "^7.4.1"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
