@@ -222,3 +222,16 @@ input[type='date'] {
 input[type='date'].text-right::-webkit-date-and-time-value {
   text-align: right;
 }
+
+/* Dark mode: pastel dream cards sit slightly back so they don't glare on true black (static, never animated). */
+:root[data-theme='dark'] .dream-card { filter: brightness(0.9) saturate(0.92); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .dream-card { filter: brightness(0.9) saturate(0.92); }
+}
+
+/* Reduced motion: no smooth scrolling and no CSS transitions anywhere; framer-motion
+   falls back to fades via MotionConfig and useSpring. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, ::before, ::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
