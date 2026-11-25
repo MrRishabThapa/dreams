@@ -1,7 +1,7 @@
 # Cloudflare Pages headers. The CSP mirrors the <meta> tag in index.html.
-# Phase 5: add the Supabase project origin (https://<project>.supabase.co) to connect-src.
+# %SUPABASE_ORIGIN% is filled from VITE_SUPABASE_URL at build time (vite.config.ts).
 /*
-  Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' %SUPABASE_ORIGIN%; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'; frame-ancestors 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
