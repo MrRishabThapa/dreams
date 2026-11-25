@@ -140,7 +140,50 @@ for (const scheme of SCHEMES) {
     await shot(page, scheme, '12-money-debts');
 
     await page.getByRole('tab', { name: 'Dreams' }).click();
+    await shot(page, scheme, '13-dreams-empty');
+    const newDream = async (title: string, target: string, icon: string, color: string, shotForm = false) => {
+      await page.getByRole('button', { name: 'New dream', exact: true }).click();
+      const f = page.getByRole('dialog', { name: 'New dream' });
+      await f.getByLabel('Dream name').fill(title);
+      await f.getByLabel('Target amount').fill(target);
+      await f.getByRole('radio', { name: icon }).click();
+      await f.getByRole('radio', { name: color }).click();
+      if (shotForm) {
+        await f.getByLabel('Target amount').blur();
+        await shot(page, scheme, '13c-new-dream');
+      }
+      await f.getByRole('button', { name: 'Add', exact: true }).click();
+      await expect(f).toBeHidden();
+    };
+    const fund = async (title: RegExp, amount: string, move = false, shotIt = false) => {
+      await page.getByRole('button', { name: title }).first().click();
+      const d = page.getByRole('dialog', { name: 'Dream detail' });
+      await d.getByRole('button', { name: 'Add Money' }).click();
+      const m = page.getByRole('dialog', { name: 'Dream money' });
+      await m.getByLabel('Dream amount').fill(amount);
+      if (move) await m.getByRole('switch', { name: 'Also move money' }).click();
+      if (shotIt) {
+        await m.getByLabel('Dream amount').blur();
+        await shot(page, scheme, '13d-dream-add-money');
+      }
+      await m.getByRole('button', { name: 'Save', exact: true }).click();
+      await expect(m).toBeHidden();
+      if (shotIt) await shot(page, scheme, '13b-dream-detail');
+      await d.getByRole('button', { name: 'Close' }).click();
+      await page.waitForTimeout(400);
+    };
+    await newDream('Japan trip', '250000', 'plane', 'Sky', true);
+    await fund(/^Japan trip/, '40000', true, true);
+    await newDream('New laptop', '160000', 'laptop', 'Lilac');
+    await fund(/^New laptop/, '95000');
+    await newDream('Emergency fund', '100000', 'shield', 'Mint');
+    await fund(/^Emergency fund/, '100000');
+    await newDream('Pokhara weekend', '30000', 'tree-palm', 'Peach');
     await shot(page, scheme, '13-dreams');
+    await page.getByRole('tab', { name: 'Home' }).click();
+    await page.evaluate(() => window.scrollTo(0, 560));
+    await shot(page, scheme, '13e-home-dreams');
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.getByRole('tab', { name: 'Audit' }).click();
     await shot(page, scheme, '14-audit');
 
