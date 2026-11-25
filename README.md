@@ -6,7 +6,7 @@
 
 **Know your money. Fund your dreams.**
 
-A private, offline-first money app for iPhone. Track what you own and owe, log every rupee
+A private, offline-first money app for iPhone and android. Track what you own and owe, log every rupee
 in seconds, close each month with a proper audit, and save toward the things you want.
 Installed from Safari as a home-screen app (PWA), with optional sync to your own Supabase project.
 
