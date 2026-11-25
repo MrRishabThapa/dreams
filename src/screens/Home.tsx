@@ -9,6 +9,7 @@ import { useApp } from '../lib/app';
 import { liveTxs, useData, useNetWorth } from '../db/hooks';
 import { monthStats, netWorthSeries } from '../domain/ledger';
 import { addMonths, monthLabel, monthOf, today } from '../domain/dates';
+import { formatMoney } from '../domain/money';
 
 function greeting() {
   const h = new Date().getHours();
@@ -46,8 +47,12 @@ export function Home() {
   const monthTxs = useMemo(() => liveTxs(data).filter((t) => t.occurred_on.startsWith(month)), [data, month]);
 
   const target = settings?.monthly_savings_target_minor ?? null;
+  const symbol = settings?.symbol ?? 'Rs';
   const first = series.find((v) => v !== 0) ?? series[0] ?? 0;
   const delta6 = nw.netWorth - first;
+
+  // Local data loads in a few ms; render nothing rather than flashing zeros that then count up.
+  if (!data) return null;
 
   return (
     <Page
@@ -72,17 +77,24 @@ export function Home() {
     >
       {/* net worth hero */}
       <section className="card mx-4 p-5" aria-label="Net worth">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-subhead font-medium text-label-2">Net worth</div>
-            <Money value={nw.netWorth} animated className="rounded-num mt-0.5 block truncate text-hero" data-testid="net-worth" />
-            {series.length > 1 && delta6 !== 0 && (
-              <div className={`mt-0.5 text-footnote font-medium ${delta6 > 0 ? 'text-income' : 'text-expense'}`}>
-                <Money value={delta6} signed /> <span className="text-label-2">· 6 months</span>
-              </div>
+        <div className="text-subhead font-medium text-label-2">Net worth</div>
+        <Money
+          value={nw.netWorth}
+          animated
+          className={`rounded-num mt-0.5 block font-bold tracking-tight ${heroSize(formatMoney(nw.netWorth, { symbol }))}`}
+          data-testid="net-worth"
+        />
+        <div className="mt-2 flex items-end justify-between gap-3">
+          <div className="min-w-0 pb-0.5 text-footnote font-medium">
+            {series.length > 1 && delta6 !== 0 ? (
+              <span className={delta6 > 0 ? 'text-income' : 'text-expense'}>
+                <Money value={delta6} signed /> <span className="text-label-2">in 6 months</span>
+              </span>
+            ) : (
+              <span className="text-label-2">Your trend appears as months pass</span>
             )}
           </div>
-          <div className="pt-2"><Sparkline values={series} width={96} height={44} color={delta6 < 0 ? 'var(--expense)' : 'var(--accent)'} /></div>
+          <Sparkline values={series} width={112} height={36} color={delta6 < 0 ? 'var(--expense)' : 'var(--accent)'} />
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2">
           <Stat label="Assets" value={nw.assets} onPress={() => window.dispatchEvent(new CustomEvent('dreams:tab', { detail: 'money' }))} />
@@ -134,11 +146,16 @@ export function Home() {
   );
 }
 
+/** Hero number steps down for crore-sized values so it never truncates at 375pt. */
+function heroSize(text: string): string {
+  return text.length <= 12 ? 'text-[44px] leading-[52px]' : text.length <= 15 ? 'text-[36px] leading-[44px]' : 'text-[30px] leading-[38px]';
+}
+
 function Stat({ label, value, onPress }: { label: string; value: number; onPress?: () => void }) {
   return (
     <button type="button" onClick={onPress} className="pressable min-w-0 rounded-ctl bg-surface-2 px-3 py-2 text-left">
       <div className="truncate text-caption font-medium text-label-2">{label}</div>
-      <Money value={value} animated className="block truncate text-subhead font-semibold" />
+      <Money value={value} animated compact className="block truncate text-subhead font-semibold" />
     </button>
   );
 }
@@ -147,7 +164,7 @@ function MiniStat({ label, value, className = '' }: { label: string; value: numb
   return (
     <div className="min-w-0">
       <div className="text-caption font-medium text-label-2">{label}</div>
-      <Money value={value} animated className={`block truncate text-[15px] font-semibold ${className}`} />
+      <Money value={value} animated compact className={`block truncate text-[15px] font-semibold ${className}`} />
     </div>
   );
 }
