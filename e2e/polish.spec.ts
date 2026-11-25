@@ -106,6 +106,9 @@ for (const scheme of ['light', 'dark'] as const) {
     writeFileSync(file, JSON.stringify(demoYear(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`).backup));
     await page.goto('/');
     await page.getByRole('button', { name: /Continue in the browser|Get Started/ }).first().waitFor();
+    const cont = page.getByRole('button', { name: 'Continue in the browser' });
+    if (await cont.isVisible()) await cont.click();
+    await page.getByRole('button', { name: 'Get Started' }).waitFor();
     const t0 = Date.now();
     await page.getByTestId('restore-input').setInputFiles(file);
     await expect(page.getByTestId('net-worth')).toBeVisible();
