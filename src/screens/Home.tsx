@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Eye, EyeOff, Settings, WifiOff } from 'lucide-react';
+import { ChartPie, ChevronLeft, ChevronRight, Eye, EyeOff, Settings, WifiOff } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Page } from '../ui/Page';
 import { IconButton, Button } from '../ui/Button';
@@ -10,7 +10,8 @@ import { liveDreams, liveTxs, useData, useNetWorth } from '../db/hooks';
 import { DreamCard } from '../sheets/DreamSheets';
 import { dreamProgress } from '../domain/dreams';
 import { monthStats, netWorthSeries } from '../domain/ledger';
-import { addMonths, monthLabel, monthOf, today } from '../domain/dates';
+import { monthReadyToClose } from '../domain/audit';
+import { addMonths, monthLabel, monthName, monthOf, today } from '../domain/dates';
 import { formatMoney } from '../domain/money';
 
 function greeting() {
@@ -48,6 +49,7 @@ export function Home() {
   const categories = useMemo(() => new Map((data?.categories ?? []).map((c) => [c.id, c])), [data]);
   const debts = useMemo(() => new Map((data?.debts ?? []).map((d) => [d.id, d])), [data]);
   const dreams = useMemo(() => liveDreams(data).map((d) => ({ d, p: dreamProgress(d, data?.dream_entries ?? [], now) })).sort((a, b) => Number(a.p.done) - Number(b.p.done)), [data, now]);
+  const ready = useMemo(() => (data ? monthReadyToClose(data, data.audits, now) : null), [data, now]);
   const monthTxs = useMemo(() => liveTxs(data).filter((t) => t.occurred_on.startsWith(month)), [data, month]);
 
   const target = settings?.monthly_savings_target_minor ?? null;
@@ -79,6 +81,28 @@ export function Home() {
         ) : null
       }
     >
+      {ready && (
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              sessionStorage.setItem('dreams.auditMonth', ready);
+            } catch {
+              /* ignore */
+            }
+            goToTab('audit');
+          }}
+          className="pressable mx-4 mb-4 flex w-[calc(100%-2rem)] items-center gap-3 rounded-card bg-accent px-4 py-3 text-left text-on-accent"
+        >
+          <ChartPie size={26} />
+          <span className="min-w-0 flex-1">
+            <span className="block text-headline">Your {monthName(ready)} audit is ready</span>
+            <span className="block text-footnote opacity-85">See where it went, then close the month.</span>
+          </span>
+          <ChevronRight size={20} />
+        </button>
+      )}
+
       {/* net worth hero */}
       <section className="card mx-4 p-5" aria-label="Net worth">
         <div className="text-subhead font-medium text-label-2">Net worth</div>
