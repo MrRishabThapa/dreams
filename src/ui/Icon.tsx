@@ -1,7 +1,9 @@
 import {
   Banknote, Landmark, Smartphone, PiggyBank, TrendingUp, Utensils, Bus, Receipt, House, ShoppingBag, HeartPulse,
   GraduationCap, Users, Clapperboard, CircleEllipsis, Briefcase, Store, Gift, Percent, ArrowLeftRight, SlidersHorizontal,
-  Wallet, type LucideIcon, type LucideProps,
+  Wallet, Plane, Car, Laptop, Heart, Bike, Camera, Gem, TreePalm, Shield, Baby, Music, Star, Coffee, Fuel, Wifi, Dumbbell,
+  Shirt, PawPrint, Plug, Pill, BookOpen, Gamepad2, Ticket, Wrench, Coins, Building2, HandHeart,
+  type LucideIcon, type LucideProps,
 } from 'lucide-react';
 
 const MAP: Record<string, LucideIcon> = {
@@ -9,8 +11,19 @@ const MAP: Record<string, LucideIcon> = {
   utensils: Utensils, bus: Bus, receipt: Receipt, house: House, 'shopping-bag': ShoppingBag, 'heart-pulse': HeartPulse,
   'graduation-cap': GraduationCap, users: Users, clapperboard: Clapperboard, 'circle-ellipsis': CircleEllipsis,
   briefcase: Briefcase, store: Store, gift: Gift, percent: Percent, transfer: ArrowLeftRight, adjust: SlidersHorizontal,
-  wallet: Wallet,
+  wallet: Wallet, plane: Plane, car: Car, laptop: Laptop, heart: Heart, bike: Bike, camera: Camera, gem: Gem,
+  'tree-palm': TreePalm, shield: Shield, baby: Baby, music: Music, star: Star, coffee: Coffee, fuel: Fuel, wifi: Wifi,
+  dumbbell: Dumbbell, shirt: Shirt, 'paw-print': PawPrint, plug: Plug, pill: Pill, 'book-open': BookOpen,
+  gamepad: Gamepad2, ticket: Ticket, wrench: Wrench, coins: Coins, building: Building2, 'hand-heart': HandHeart,
 };
+
+/** Icons offered in the category editor. */
+export const CATEGORY_ICONS = [
+  'utensils', 'coffee', 'bus', 'fuel', 'car', 'receipt', 'plug', 'wifi', 'house', 'shopping-bag', 'shirt', 'heart-pulse',
+  'pill', 'dumbbell', 'graduation-cap', 'book-open', 'users', 'baby', 'paw-print', 'clapperboard', 'gamepad', 'ticket',
+  'music', 'plane', 'gift', 'hand-heart', 'wrench', 'smartphone', 'briefcase', 'store', 'percent', 'coins', 'building',
+  'circle-ellipsis',
+];
 
 export function Icon({ name, ...p }: { name: string | null | undefined } & Omit<LucideProps, 'name'>) {
   const C = (name && MAP[name]) || CircleEllipsis;
