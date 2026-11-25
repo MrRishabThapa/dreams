@@ -10,7 +10,8 @@ test.skip(!process.env.SHOTS, 'set SHOTS=1 to capture screenshots');
 const SCHEMES = ['light', 'dark'] as const;
 
 async function shot(page: Page, scheme: string, name: string, fullPage = false) {
-  await page.waitForTimeout(450); // let springs settle
+  // let springs settle; sheets take longer on headless WebKit's first open
+  await page.waitForTimeout((await page.getByRole('dialog').count()) ? 1200 : 500);
   await page.screenshot({ path: `screenshots/${scheme}/${name}.png`, fullPage });
 }
 
