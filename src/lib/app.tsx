@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { db } from '../db/db';
 import { patch } from '../db/repo';
-import type { Account, Transaction, TxType, UserSettings } from '../domain/types';
+import type { Account, Debt, Transaction, TxType, UserSettings } from '../domain/types';
 
 export type SheetReq =
   | { kind: 'add'; tx?: Transaction; type?: TxType; accountId?: string }
@@ -10,7 +10,10 @@ export type SheetReq =
   | { kind: 'accountDetail'; id: string }
   | { kind: 'correct'; account: Account }
   | { kind: 'pickAccount'; title: string; exclude?: string; onPick: (id: string) => void }
-  | { kind: 'settings' };
+  | { kind: 'settings' }
+  | { kind: 'debt'; debt?: Debt; direction?: Debt['direction'] }
+  | { kind: 'debtDetail'; id: string }
+  | { kind: 'payment'; debtId: string };
 
 export interface SheetEntry {
   key: number;
@@ -111,4 +114,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
 export function isStandalone(): boolean {
   return (navigator as Navigator & { standalone?: boolean }).standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+}
+
+/** Switches to a tab from anywhere; optionally preselects the Money tab's segment. */
+export function goToTab(tab: 'home' | 'money' | 'dreams' | 'audit', moneySeg?: 'accounts' | 'debts') {
+  if (moneySeg) {
+    try {
+      sessionStorage.setItem('dreams.moneySeg', moneySeg);
+    } catch {
+      /* ignore */
+    }
+  }
+  window.dispatchEvent(new CustomEvent('dreams:tab', { detail: tab }));
+  if (moneySeg) window.dispatchEvent(new CustomEvent('dreams:moneySeg', { detail: moneySeg }));
 }
