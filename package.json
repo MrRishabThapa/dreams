@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "scripts/webkit-env.sh playwright test",
-    "icons": "scripts/webkit-env.sh node scripts/make-icons.mjs",
+    "icons": "scripts/make-icons.sh",
     "deploy": "npm run build && npx wrangler pages deploy dist --project-name dreams",
     "demo": "node scripts/demo-year.mjs > demo-backup.json"
   },
