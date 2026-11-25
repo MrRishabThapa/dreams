@@ -11,6 +11,7 @@ import { isStandalone } from '../lib/app';
 import { useSpring } from '../lib/motion';
 import { useRestore } from '../ui/useRestore';
 import type { AccountKind } from '../domain/types';
+import { Logo } from '../ui/Logo';
 
 type Step = 'install' | 'welcome' | 'account' | 'prefs';
 
@@ -54,13 +55,13 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             'install',
             <>
               <div className="flex flex-1 flex-col items-center px-8 pt-10 text-center">
-                <img src="/apple-touch-icon.png" alt="" className="h-20 w-20 rounded-[18px] shadow-card" />
+                <Logo size={80} />
                 <h1 className="mt-6 text-title">Install Dreams first</h1>
                 <p className="mt-2 text-body text-label-2">Your money data lives on this iPhone. Safari and the Home Screen app keep separate storage, so install the app before you add anything.</p>
                 <div className="card mt-8 w-full p-4 text-left">
                   <Step n={1} icon={<Share size={18} className="text-accent" />}>Tap <b>Share</b> in Safari’s toolbar</Step>
                   <Step n={2} icon={<SquarePlus size={18} className="text-accent" />}>Choose <b>Add to Home Screen</b></Step>
-                  <Step n={3} icon={<img src="/apple-touch-icon.png" alt="" className="h-[18px] w-[18px] rounded-[4px]" />}>Open <b>Dreams</b> from your Home Screen</Step>
+                  <Step n={3} icon={<Logo size={20} />}>Open <b>Dreams</b> from your Home Screen</Step>
                 </div>
               </div>
               <div className="px-6">
@@ -73,7 +74,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             'welcome',
             <>
               <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
-                <img src="/apple-touch-icon.png" alt="" className="h-24 w-24 rounded-[22px] shadow-card" />
+                <Logo size={104} label="Dreams logo" />
                 <h1 className="mt-6 text-[40px] font-bold leading-tight tracking-tight">Dreams</h1>
                 <p className="mt-2 text-title3 font-normal text-label-2">Know your money.<br />Fund your dreams.</p>
                 <div className="mt-10 w-full space-y-4 text-left">
