@@ -41,6 +41,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await shot(page, scheme, '22-audit-top');
     await shot(page, scheme, '23-audit-full', true);
     await page.getByRole('button', { name: /Food, see transactions/ }).click();
+    await page.getByRole('dialog', { name: 'Category transactions' }).waitFor();
     await shot(page, scheme, '24-audit-category');
     await page.getByRole('dialog', { name: 'Category transactions' }).getByRole('button', { name: 'Done' }).click();
     await page.waitForTimeout(500);
