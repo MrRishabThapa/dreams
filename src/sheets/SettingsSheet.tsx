@@ -15,6 +15,7 @@ import { useData } from '../db/hooks';
 import { backupNudge, exportBackupFile, shareOrDownload, transactionsCSV } from '../db/backup';
 import { formatMoney, parseMoney } from '../domain/money';
 import { today } from '../domain/dates';
+import { Logo } from '../ui/Logo';
 
 const ic = (el: React.ReactNode) => <span className="flex h-[30px] w-[30px] items-center justify-center text-accent">{el}</span>;
 
@@ -140,7 +141,15 @@ export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: ()
         <Row title="Erase all data" destructive onPress={reset} />
       </Group>
 
-      <p className="mt-6 text-center text-footnote text-label-2">Dreams {__APP_VERSION__} · Know your money. Fund your dreams.</p>
+      <Group header="About" className="mt-6">
+        <div className="row sep flex items-center gap-3 bg-surface px-4 py-3" data-testid="about-row">
+          <Logo size={52} label="Dreams logo" />
+          <div className="min-w-0 flex-1">
+            <div className="text-headline">Dreams</div>
+            <div className="text-footnote text-label-2">Version {__APP_VERSION__} · Know your money. Fund your dreams.</div>
+          </div>
+        </div>
+      </Group>
     </Sheet>
   );
 }
