@@ -51,7 +51,7 @@ export function Keypad({ onKey }: { onKey: (k: KeyValue) => void }) {
             onPointerUp={() => window.clearTimeout(hold.current)}
             onPointerLeave={() => window.clearTimeout(hold.current)}
             onClick={() => onKey(k)}
-            className={`pressable flex h-[50px] items-center justify-center rounded-[12px] text-[26px] ${
+            className={`pressable flex h-[44px] items-center justify-center rounded-[12px] text-[26px] ${
               isOp ? 'bg-fill text-accent' : 'bg-surface text-label shadow-[0_1px_0_rgba(0,0,0,0.08)]'
             }`}
           >
