@@ -24,8 +24,8 @@ export function SyncBanner() {
           role="status"
           aria-label="Sync changes"
         >
-          <div className="pointer-events-auto flex min-h-[44px] items-center gap-1 rounded-full bg-[var(--toast-bg)] py-1.5 pl-5 pr-1.5 text-[15px] font-medium text-[var(--toast-fg)] shadow-float">
-            <span className="mr-1">You’re online. Sync {s.pending} change{s.pending === 1 ? '' : 's'}?</span>
+          <div className="pointer-events-auto flex min-h-[44px] items-center gap-1 rounded-full bg-[var(--toast-bg)] py-1.5 pl-4 pr-1.5 text-[14px] font-medium text-[var(--toast-fg)] shadow-float">
+            <span className="mr-1 whitespace-nowrap">You’re online. Sync {s.pending} change{s.pending === 1 ? '' : 's'}?</span>
             <button type="button" className="min-h-[36px] rounded-full bg-accent px-4 font-semibold text-on-accent" onClick={() => void syncNow()}>
               Sync
             </button>
