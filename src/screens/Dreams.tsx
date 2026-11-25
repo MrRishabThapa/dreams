@@ -2,13 +2,14 @@ import { Plus } from 'lucide-react';
 import { useMemo } from 'react';
 import { Page } from '../ui/Page';
 import { Button, IconButton } from '../ui/Button';
-import { EmptyState, Art } from '../ui/bits';
+import { EmptyState } from '../ui/bits';
 import { Money } from '../ui/Money';
 import { DreamCard } from '../sheets/DreamSheets';
 import { useApp } from '../lib/app';
 import { liveDreams, useData } from '../db/hooks';
 import { dreamProgress } from '../domain/dreams';
 import { today } from '../domain/dates';
+import { Logo } from '../ui/Logo';
 
 export function DreamsScreen() {
   const data = useData();
@@ -26,7 +27,7 @@ export function DreamsScreen() {
     <Page title="Dreams" right={<IconButton label="New dream" onClick={() => openSheet({ kind: 'dream' })}><Plus size={26} /></IconButton>}>
       {items.length === 0 ? (
         <EmptyState
-          art={Art.moon}
+          art={<Logo size={72} />}
           title="Fund your dreams"
           message="A trip, a laptop, an emergency fund. Set a target and watch it fill up."
           action={<Button size="md" onClick={() => openSheet({ kind: 'dream' })}>New Dream</Button>}
