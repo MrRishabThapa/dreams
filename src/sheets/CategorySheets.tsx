@@ -46,12 +46,20 @@ export function CategoriesSheet({ open, onClose, z }: { open: boolean; onClose: 
       <Group footer="Tap to edit. Swipe left to delete; past transactions keep their category. The first ones appear first in the Add sheet until you build up recent picks.">
         {list.map((c, i) => (
           <SwipeRow key={c.id} onDelete={() => void del(c)} onEdit={() => openSheet({ kind: 'category', category: c, type })}>
-            <Row icon={<IconTile name={c.icon} color={c.color} />} title={c.name} onPress={() => openSheet({ kind: 'category', category: c, type })}>
-              <span className="flex">
-                <button type="button" aria-label={`Move ${c.name} up`} disabled={i === 0} onClick={(e) => { e.stopPropagation(); void move(c, -1); }} className="flex h-11 w-9 items-center justify-center text-label-2 disabled:opacity-25">↑</button>
-                <button type="button" aria-label={`Move ${c.name} down`} disabled={i === list.length - 1} onClick={(e) => { e.stopPropagation(); void move(c, 1); }} className="flex h-11 w-9 items-center justify-center text-label-2 disabled:opacity-25">↓</button>
+            <div className="row sep flex min-h-[44px] items-center bg-surface">
+              <button
+                type="button"
+                onClick={() => openSheet({ kind: 'category', category: c, type })}
+                className="flex min-h-[44px] min-w-0 flex-1 items-center gap-3 pl-4 text-left active:bg-surface-3"
+              >
+                <IconTile name={c.icon} color={c.color} />
+                <span className="row-body flex min-h-[44px] flex-1 items-center truncate py-2.5 text-body">{c.name}</span>
+              </button>
+              <span className="row-body flex self-stretch pr-2">
+                <button type="button" aria-label={`Move ${c.name} up`} disabled={i === 0} onClick={() => void move(c, -1)} className="flex h-11 w-10 items-center justify-center text-label-2 disabled:opacity-25">↑</button>
+                <button type="button" aria-label={`Move ${c.name} down`} disabled={i === list.length - 1} onClick={() => void move(c, 1)} className="flex h-11 w-10 items-center justify-center text-label-2 disabled:opacity-25">↓</button>
               </span>
-            </Row>
+            </div>
           </SwipeRow>
         ))}
       </Group>
