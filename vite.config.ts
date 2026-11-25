@@ -1,14 +1,38 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
-export default defineConfig({
+/**
+ * Fills %SUPABASE_ORIGIN% in the CSP (index.html <meta> and the Cloudflare _headers file)
+ * from VITE_SUPABASE_URL at build time, so connect-src allows exactly that one origin.
+ */
+function supabaseCsp(origin: string): Plugin {
+  return {
+    name: 'dreams-supabase-csp',
+    transformIndexHtml: (html) => html.replace(/ ?%SUPABASE_ORIGIN%/g, origin ? ` ${origin}` : ''),
+    closeBundle() {
+      const f = new URL('./dist/_headers', import.meta.url);
+      if (existsSync(f)) writeFileSync(f, readFileSync(f, 'utf8').replace(/ ?%SUPABASE_ORIGIN%/g, origin ? ` ${origin}` : ''));
+    },
+  };
+}
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), 'VITE_');
+  let supabaseOrigin = '';
+  try {
+    supabaseOrigin = env.VITE_SUPABASE_URL ? new URL(env.VITE_SUPABASE_URL).origin : '';
+  } catch {
+    supabaseOrigin = '';
+  }
+  return {
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [
     react(),
+    supabaseCsp(supabaseOrigin),
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,
@@ -36,6 +60,8 @@ export default defineConfig({
         globIgnores: ['**/logo.png'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
+        // never cache Supabase API or auth responses: always straight to the network
+        runtimeCaching: [{ urlPattern: /^https:\/\/[a-z0-9-]+\.supabase\.co\//, handler: 'NetworkOnly' }],
       },
       devOptions: { enabled: false },
     }),
@@ -48,4 +74,5 @@ export default defineConfig({
     include: ['src/**/*.test.ts'],
     setupFiles: ['fake-indexeddb/auto'],
   },
-} as any);
+} as any;
+});
