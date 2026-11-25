@@ -79,8 +79,8 @@ describe('sync readiness (no network)', () => {
   it('keeps a cursor slot per table in local meta', async () => {
     await ensureSyncSlots();
     for (const t of SYNCED_TABLES) expect(await getSyncCursor(t)).toBeNull();
-    await setSyncCursor('transactions', '2026-11-25T10:00:00Z');
+    await setSyncCursor('transactions', { ts: '2026-11-25T10:00:00.123456+00:00', id: 'abc' });
     await ensureSyncSlots(); // idempotent
-    expect(await getSyncCursor('transactions')).toBe('2026-11-25T10:00:00Z');
+    expect(await getSyncCursor('transactions')).toEqual({ ts: '2026-11-25T10:00:00.123456+00:00', id: 'abc' });
   });
 });
