@@ -2,8 +2,11 @@ import { expect, type Page } from '@playwright/test';
 
 export async function onboard(page: Page, opts: { name?: string; balance?: string; target?: string } = {}) {
   await page.goto('/');
+  // Wait for the first onboarding screen to render (install card in the browser, welcome when standalone).
+  const first = page.getByRole('button', { name: /Continue in the browser|Get Started/ });
+  await first.first().waitFor();
   const cont = page.getByRole('button', { name: 'Continue in the browser' });
-  if (await cont.isVisible().catch(() => false)) await cont.click();
+  if (await cont.isVisible()) await cont.click();
   await page.getByRole('button', { name: 'Get Started' }).click();
   if (opts.name) await page.getByLabel('Account name').fill(opts.name);
   await page.getByLabel('Current balance').fill(opts.balance ?? '10000');
