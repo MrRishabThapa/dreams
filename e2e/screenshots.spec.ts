@@ -11,7 +11,11 @@ const SCHEMES = ['light', 'dark'] as const;
 
 async function shot(page: Page, scheme: string, name: string, fullPage = false) {
   // let springs settle; sheets take longer on headless WebKit's first open
-  await page.waitForTimeout((await page.getByRole('dialog').count()) ? 1200 : 500);
+  const dialogs = page.getByRole('dialog');
+  const n = await dialogs.count();
+  // wait for the top sheet to finish sliding in (headless WebKit runs springs slowly on first open)
+  if (n) await expect(dialogs.nth(n - 1).getByRole('button').first()).toBeInViewport({ ratio: 1 });
+  await page.waitForTimeout(n ? 700 : 500);
   await page.screenshot({ path: `screenshots/${scheme}/${name}.png`, fullPage });
 }
 
