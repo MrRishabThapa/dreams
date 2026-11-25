@@ -9,7 +9,7 @@ test('onboarding lands on Home with the opening balance as net worth', async ({ 
 
 test('add an expense in 3 taps (plus digits)', async ({ page }) => {
   await onboard(page, { balance: '1000' });
-  await page.getByRole('button', { name: 'Add transaction' }).click(); // tap 1
+  await page.getByRole('button', { name: 'Add transaction', exact: true }).click(); // tap 1
   await typeAmount(page, '250');
   await page.getByRole('radio', { name: 'Food' }).click(); // tap 2
   await page.getByRole('dialog', { name: 'Add transaction' }).getByRole('button', { name: 'Save', exact: true }).last().click(); // tap 3
@@ -20,7 +20,7 @@ test('add an expense in 3 taps (plus digits)', async ({ page }) => {
 
 test('keypad math: 250+120×2 = 490', async ({ page }) => {
   await onboard(page);
-  await page.getByRole('button', { name: 'Add transaction' }).click();
+  await page.getByRole('button', { name: 'Add transaction', exact: true }).click();
   await typeAmount(page, '250');
   await page.getByRole('button', { name: '+', exact: true }).click();
   await typeAmount(page, '120');
@@ -31,7 +31,7 @@ test('keypad math: 250+120×2 = 490', async ({ page }) => {
 
 test('edit, then delete with undo', async ({ page }) => {
   await onboard(page, { balance: '1000' });
-  await page.getByRole('button', { name: 'Add transaction' }).click();
+  await page.getByRole('button', { name: 'Add transaction', exact: true }).click();
   await typeAmount(page, '100');
   await page.getByRole('radio', { name: 'Transport' }).click();
   await page.getByRole('button', { name: 'Save', exact: true }).last().click();
@@ -73,7 +73,7 @@ test('3 accounts + 20 transactions fully offline; balances and net worth correct
   await page.getByRole('tab', { name: 'Home' }).click();
 
   // 20 transactions: 14 expenses of 100, 4 incomes of 1000, 2 transfers of 2000 (bank → savings)
-  await page.getByRole('button', { name: 'Add transaction' }).click();
+  await page.getByRole('button', { name: 'Add transaction', exact: true }).click();
   const sheet = page.getByRole('dialog', { name: 'Add transaction' });
   for (let i = 0; i < 14; i++) {
     await typeAmount(page, '100');
