@@ -35,7 +35,7 @@ export function DreamCard({ dream, progress, onPress, wide }: { dream: Dream; pr
       type="button"
       onClick={onPress}
       aria-label={`${dream.title}, ${Math.round(progress.progress * 100)}%`}
-      className={`pressable relative flex shrink-0 snap-start flex-col overflow-hidden rounded-card p-4 text-left ${wide ? 'w-[240px]' : 'w-full'}`}
+      className={`dream-card pressable relative flex shrink-0 snap-start flex-col overflow-hidden rounded-card p-4 text-left ${wide ? 'w-[240px]' : 'w-full'}`}
       style={{ background: `linear-gradient(145deg, ${c.from}, ${c.to})`, color: c.ink }}
     >
       <div className="flex items-start justify-between">
