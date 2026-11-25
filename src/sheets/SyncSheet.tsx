@@ -38,7 +38,7 @@ export function SignInForm({ onSignedIn }: { onSignedIn?: () => void }) {
 
   return (
     <form onSubmit={submit} noValidate>
-      <Group footer="Use the account Rishab created in Supabase. There’s no sign-up here, and no email links: type your password in this app.">
+      <Group footer="Use the account you created in Supabase. There’s no sign-up here, and no email links: type your password in this app.">
         <label className="row sep flex min-h-[44px] items-center bg-surface pl-4">
           <span className="row-body flex flex-1 items-center gap-3 pr-4">
             <span className="w-20 shrink-0 text-body">Email</span>
