@@ -38,24 +38,27 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
 export function ProgressRing({ value, size = 44, stroke = 5, color = 'var(--accent)', track = 'var(--fill)', children }: { value: number; size?: number; stroke?: number; color?: string; track?: string; children?: ReactNode }) {
   const reduce = useReducedMotion();
   const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
   const v = Math.max(0, Math.min(1, value || 0));
+  // Plain dasharray/dashoffset (framer's pathLength didn't paint in WebKit 16).
   return (
     <span className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90" aria-hidden>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={track} strokeWidth={stroke} />
-        <motion.circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          initial={false}
-          animate={{ pathLength: v } as any}
-          transition={reduce ? { duration: 0 } : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          style={{ opacity: v === 0 ? 0 : 1 }}
-        />
+        {v > 0 && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={c}
+            strokeDashoffset={c * (1 - v)}
+            style={{ transition: reduce ? 'none' : 'stroke-dashoffset 450ms cubic-bezier(0.22, 1, 0.36, 1)' }}
+          />
+        )}
       </svg>
       {children && <span className="absolute inset-0 flex items-center justify-center">{children}</span>}
     </span>
