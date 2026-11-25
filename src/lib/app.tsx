@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { db } from '../db/db';
-import { patch } from '../db/repo';
+import { getSettings, patch } from '../db/repo';
 import { ensureSyncSlots } from '../db/sync';
 import type { Account, Debt, Dream, Transaction, TxType, UserSettings } from '../domain/types';
 
@@ -78,7 +78,7 @@ export function applyTheme(t: UserSettings['theme']) {
 let seq = 0;
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const settings = useLiveQuery(async () => (await db.user_settings.toArray()).find((s) => !s.deleted_at), []);
+  const settings = useLiveQuery(() => getSettings(), []);
   const [hide, setHideState] = useState(readHide);
   const [sheets, setSheets] = useState<SheetEntry[]>([]);
 
