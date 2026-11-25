@@ -20,6 +20,9 @@ export function MoneyScreen() {
   const archived = liveAccounts(data, true).filter((a) => a.archived);
   const total = accounts.reduce((s, a) => s + (bal.get(a.id) ?? 0), 0);
 
+  // Local data loads in a few ms; render nothing rather than flashing zeros that then count up.
+  if (!data) return null;
+
   return (
     <Page
       title="Money"
@@ -48,7 +51,7 @@ export function MoneyScreen() {
                       key={a.id}
                       icon={<IconTile name={a.icon} color={a.color} />}
                       title={a.name}
-                      subtitle={KIND_META[a.kind].label}
+                      subtitle={a.name === KIND_META[a.kind].label ? undefined : KIND_META[a.kind].label}
                       value={<Money value={bal.get(a.id) ?? 0} className={`${(bal.get(a.id) ?? 0) < 0 ? 'text-expense' : 'text-label'}`} />}
                       chevron
                       onPress={() => openSheet({ kind: 'accountDetail', id: a.id })}
