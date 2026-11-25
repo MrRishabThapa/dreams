@@ -44,7 +44,7 @@ export function TabBar({ tab, onTab, onAdd }: { tab: Tab; onTab: (t: Tab) => voi
             onClick={onAdd}
             whileTap={{ scale: 0.9 }}
             transition={t}
-            className="-mt-[14px] flex h-[54px] w-[54px] items-center justify-center rounded-full bg-accent text-white"
+            className="-mt-[14px] flex h-[54px] w-[54px] items-center justify-center rounded-full bg-accent text-on-accent"
             style={{ boxShadow: '0 6px 16px color-mix(in srgb, var(--accent) 40%, transparent), 0 0 0 4px var(--bg)' }}
           >
             <Plus size={28} strokeWidth={2.4} />
