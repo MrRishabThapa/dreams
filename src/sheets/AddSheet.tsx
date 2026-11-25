@@ -250,7 +250,7 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
                 <Trash2 size={20} />
               </Button>
             ) : (
-              <Button variant="gray" onClick={() => save(true)} className="flex-1" disabled={!amount}>
+              <Button variant="gray" onClick={() => save(true)} className="flex-1 whitespace-nowrap px-3 text-[15px]" disabled={!amount}>
                 Save &amp; add another
               </Button>
             )}
