@@ -81,6 +81,9 @@ for (const scheme of ['light', 'dark'] as const) {
     await s.getByRole('button', { name: /^App Lock/ }).scrollIntoViewIfNeeded();
     await page.evaluate(() => document.querySelector('[aria-label="Settings"] .sheet-scroll')?.scrollTo(0, 0));
     await shot(page, scheme, '30-settings');
+    await s.getByTestId('about-row').scrollIntoViewIfNeeded();
+    await shot(page, scheme, '30b-settings-about');
+    await page.evaluate(() => document.querySelector('[aria-label="Settings"] .sheet-scroll')?.scrollTo(0, 0));
     await s.getByRole('button', { name: 'Categories' }).click();
     await shot(page, scheme, '31-categories');
     await page.getByRole('dialog', { name: 'Categories' }).getByRole('button', { name: 'Shopping', exact: true }).click();
