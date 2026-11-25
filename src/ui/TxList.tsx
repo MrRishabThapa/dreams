@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeftRight, SlidersHorizontal } from 'lucide-react';
-import type { Account, Category, Transaction } from '../domain/types';
+import { ArrowLeftRight, HandCoins, SlidersHorizontal } from 'lucide-react';
+import type { Account, Category, Debt, Transaction } from '../domain/types';
 import { dayLabel } from '../domain/dates';
 import { Money } from './Money';
 import { IconTile } from './Icon';
@@ -9,7 +9,13 @@ import { useApp } from '../lib/app';
 import { useToast } from './Toast';
 import { restore, softDelete } from '../db/repo';
 
-export function txTitle(t: Transaction, accounts: Map<string, Account>): string {
+export function txTitle(t: Transaction, accounts: Map<string, Account>, debts?: Map<string, Debt>): string {
+  if (t.debt_id) {
+    const d = debts?.get(t.debt_id);
+    const who = d?.person ?? 'someone';
+    if (t.debt_event === 'open') return d?.direction === 'owed' ? `Lent to ${who}` : `Borrowed from ${who}`;
+    return d?.direction === 'owed' ? `Collected from ${who}` : `Repaid ${who}`;
+  }
   if (t.type === 'transfer') return `${accounts.get(t.account_id)?.name ?? '—'} → ${accounts.get(t.to_account_id ?? '')?.name ?? '—'}`;
   if (t.type === 'adjust') return accounts.get(t.account_id)?.kind === 'investment' ? 'Value update' : 'Balance correction';
   return t.category_name ?? (t.type === 'income' ? 'Income' : 'Expense');
@@ -24,12 +30,13 @@ export function txSigned(t: Transaction, perspective?: string): number {
   return t.amount_minor;
 }
 
-export function TxRow({ t, accounts, categories, perspective }: { t: Transaction; accounts: Map<string, Account>; categories: Map<string, Category>; perspective?: string }) {
+export function TxRow({ t, accounts, categories, debts, perspective }: { t: Transaction; accounts: Map<string, Account>; categories: Map<string, Category>; debts?: Map<string, Debt>; perspective?: string }) {
   const cat = t.category_id ? categories.get(t.category_id) : undefined;
   const acc = accounts.get(t.account_id);
   const signed = txSigned(t, perspective);
-  const tile =
-    t.type === 'transfer' ? (
+  const tile = t.debt_id ? (
+      <span className="inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] bg-warn text-white"><HandCoins size={19} /></span>
+    ) : t.type === 'transfer' ? (
       <span className="inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] bg-[#8E8E93] text-white"><ArrowLeftRight size={19} /></span>
     ) : t.type === 'adjust' ? (
       <span className="inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] bg-[#8E8E93] text-white"><SlidersHorizontal size={18} /></span>
@@ -42,13 +49,13 @@ export function TxRow({ t, accounts, categories, perspective }: { t: Transaction
       {tile}
       <div className="row-body flex min-h-[56px] min-w-0 flex-1 items-center gap-2 py-2 pr-4">
         <div className="min-w-0 flex-1">
-          <div className="truncate text-body">{txTitle(t, accounts)}</div>
+          <div className="truncate text-body">{txTitle(t, accounts, debts)}</div>
           {sub && <div className="truncate text-footnote text-label-2">{sub}</div>}
         </div>
         <Money
           value={signed}
           signed={t.type !== 'transfer' || !!perspective}
-          className={`text-body ${t.type === 'income' || (t.type !== 'expense' && signed > 0 && t.type !== 'transfer') || (perspective && signed > 0) ? 'text-income' : t.type === 'transfer' && !perspective ? 'text-label-2' : ''}`}
+          className={`text-body ${t.debt_id ? 'text-label-2' : t.type === 'income' || (t.type !== 'expense' && signed > 0 && t.type !== 'transfer') || (perspective && signed > 0) ? 'text-income' : t.type === 'transfer' && !perspective ? 'text-label-2' : ''}`}
         />
       </div>
     </div>
@@ -56,7 +63,7 @@ export function TxRow({ t, accounts, categories, perspective }: { t: Transaction
 }
 
 /** Day-grouped transaction list with swipe to edit/delete and undo. */
-export function TxGroups({ txs, accounts, categories, perspective }: { txs: Transaction[]; accounts: Map<string, Account>; categories: Map<string, Category>; perspective?: string }) {
+export function TxGroups({ txs, accounts, categories, debts, perspective }: { txs: Transaction[]; accounts: Map<string, Account>; categories: Map<string, Category>; debts?: Map<string, Debt>; perspective?: string }) {
   const { openSheet } = useApp();
   const toast = useToast();
   const groups: { day: string; items: Transaction[] }[] = [];
@@ -82,15 +89,20 @@ export function TxGroups({ txs, accounts, categories, perspective }: { txs: Tran
             </h3>
             <div className="card overflow-hidden">
               <AnimatePresence initial={false}>
-                {g.items.map((t) => (
-                  <motion.div key={t.id} layout="position" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="sep">
-                    <SwipeRow onDelete={() => void del(t)} onEdit={() => openSheet({ kind: 'add', tx: t })}>
-                      <button type="button" className="block w-full text-left active:bg-surface-3" onClick={() => openSheet({ kind: 'add', tx: t })} aria-label={`Edit ${txTitle(t, accounts)}`}>
-                        <TxRow t={t} accounts={accounts} categories={categories} perspective={perspective} />
-                      </button>
-                    </SwipeRow>
-                  </motion.div>
-                ))}
+                {g.items.map((t) => {
+                  // Debt movements are managed from the debt itself, so the debt and its cash never drift apart.
+                  const open = () => (t.debt_id ? openSheet({ kind: 'debtDetail', id: t.debt_id }) : openSheet({ kind: 'add', tx: t }));
+                  const title = txTitle(t, accounts, debts);
+                  return (
+                    <motion.div key={t.id} layout="position" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="sep">
+                      <SwipeRow onDelete={t.debt_id ? undefined : () => void del(t)} onEdit={t.debt_id ? undefined : open}>
+                        <button type="button" className="block w-full text-left active:bg-surface-3" onClick={open} aria-label={t.debt_id ? `Open ${title}` : `Edit ${title}`}>
+                          <TxRow t={t} accounts={accounts} categories={categories} debts={debts} perspective={perspective} />
+                        </button>
+                      </SwipeRow>
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </div>
           </section>
