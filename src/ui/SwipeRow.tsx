@@ -38,7 +38,7 @@ export function SwipeRow({ children, onDelete, onEdit }: { children: ReactNode; 
           aria-label="Edit"
           style={{ opacity: editOpacity }}
           onClick={() => { settle(0); onEdit(); }}
-          className="absolute inset-y-0 left-0 flex w-full items-center justify-start bg-accent pl-7 text-white"
+          className="absolute inset-y-0 left-0 flex w-full items-center justify-start bg-accent pl-7 text-on-accent"
         >
           <Pencil size={22} />
         </motion.button>
