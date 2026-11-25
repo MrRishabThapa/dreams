@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { db } from '../db/db';
 import { patch } from '../db/repo';
+import { ensureSyncSlots } from '../db/sync';
 import type { Account, Debt, Dream, Transaction, TxType, UserSettings } from '../domain/types';
 
 export type SheetReq =
@@ -89,6 +90,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       /* ignore */
     }
   }, [hide]);
+
+  useEffect(() => {
+    void ensureSyncSlots();
+  }, []);
 
   useEffect(() => {
     if (settings) applyTheme(settings.theme);
