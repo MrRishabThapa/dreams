@@ -16,7 +16,8 @@ async function shot(page: Page, scheme: string, name: string, fullPage = false) 
   const dialogs = page.getByRole('dialog');
   const n = await dialogs.count();
   // wait for the top sheet to finish sliding in (headless WebKit runs springs slowly on first open)
-  if (n) await expect(dialogs.nth(n - 1).getByRole('button').first()).toBeInViewport({ ratio: 1 });
+  // (a sheet that is still closing has no buttons, so this is best-effort)
+  if (n) await expect(dialogs.nth(n - 1).getByRole('button').first()).toBeInViewport({ ratio: 1, timeout: 4000 }).catch(() => undefined);
   await page.waitForTimeout(n ? 700 : 500);
   await page.screenshot({ path: `screenshots/${scheme}/${name}.png`, fullPage });
 }
