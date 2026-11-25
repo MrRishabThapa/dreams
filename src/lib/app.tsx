@@ -17,7 +17,10 @@ export type SheetReq =
   | { kind: 'dream'; dream?: Dream }
   | { kind: 'dreamDetail'; id: string }
   | { kind: 'dreamMoney'; dreamId: string; mode: 'add' | 'withdraw' }
-  | { kind: 'categoryTxs'; month: string; key: string; name: string };
+  | { kind: 'categoryTxs'; month: string; key: string; name: string }
+  | { kind: 'appLock' }
+  | { kind: 'categories' }
+  | { kind: 'category'; category?: import('../domain/types').Category; type: 'income' | 'expense' };
 
 export interface SheetEntry {
   key: number;
