@@ -7,6 +7,9 @@ import { ActionSheetProvider } from './ui/ActionSheet';
 import { TabBar, type Tab } from './ui/TabBar';
 import { UpdateBanner } from './ui/UpdateBanner';
 import { AppLockGate } from './ui/AppLock';
+import { SyncBanner } from './ui/SyncBanner';
+import { SyncSheet } from './sheets/SyncSheet';
+import { initSync } from './sync/controller';
 import { AppLockSheet } from './sheets/AppLockSheet';
 import { CategoriesSheet, CategorySheet } from './sheets/CategorySheets';
 import { Home } from './screens/Home';
@@ -80,6 +83,10 @@ function Shell() {
   };
 
   useEffect(() => {
+    void initSync();
+  }, []);
+
+  useEffect(() => {
     const h = (e: Event) => go((e as CustomEvent<Tab>).detail);
     window.addEventListener('dreams:tab', h);
     return () => window.removeEventListener('dreams:tab', h);
@@ -100,6 +107,7 @@ function Shell() {
         )}
       </motion.main>
       <TabBar tab={tab} onTab={go} onAdd={() => openSheet({ kind: 'add' })} />
+      <SyncBanner />
       {sheets.map((s, i) => (
         <SheetFor key={s.key} entry={s} z={i} />
       ))}
@@ -140,6 +148,8 @@ function SheetFor({ entry, z }: { entry: SheetEntry; z: number }) {
       return <CategoriesSheet open={open} onClose={close} z={z} />;
     case 'category':
       return <CategorySheet open={open} onClose={close} z={z} category={req.category} type={req.type} />;
+    case 'sync':
+      return <SyncSheet open={open} onClose={close} z={z} />;
     case 'appLock':
       return <AppLockSheet open={open} onClose={close} z={z} />;
     case 'categoryTxs':
