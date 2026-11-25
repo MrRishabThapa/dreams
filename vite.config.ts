@@ -12,7 +12,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,
-      includeAssets: ['apple-touch-icon.png', 'favicon.svg', 'boot.js'],
+      includeAssets: ['apple-touch-icon.png', 'favicon.png', 'logo-mark.png', 'boot.js'],
       manifest: {
         name: 'Dreams',
         short_name: 'Dreams',
@@ -32,6 +32,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        // the 1 MB source logo is only an input to scripts/make-icons.sh
+        globIgnores: ['**/logo.png'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
       },
