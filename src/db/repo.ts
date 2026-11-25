@@ -1,5 +1,5 @@
 import { db, type SyncedTable } from './db';
-import type { Account, Base, Category, Debt, ISODate, Minor, Transaction, UserSettings } from '../domain/types';
+import type { Account, Base, Category, Debt, Dream, DreamEntry, ISODate, Minor, Transaction, UserSettings } from '../domain/types';
 import { DEFAULT_CATEGORIES, KIND_META } from '../lib/catalog';
 import { today } from '../domain/dates';
 import { debtRemaining } from '../domain/ledger';
@@ -290,6 +290,115 @@ export async function deleteDebt(debt: Debt): Promise<string[]> {
 export async function undoDeleteDebt(debtId: string, txIds: string[]): Promise<void> {
   await restore('debts', [debtId]);
   await restore('transactions', txIds);
+}
+
+/* ---------- Dreams ---------- */
+
+export interface DreamInput {
+  title: string;
+  icon: string;
+  color: string;
+  target_minor: Minor;
+  target_on?: ISODate | null;
+}
+
+export async function createDream(input: DreamInput): Promise<Dream> {
+  checkAmount(input.target_minor);
+  if (!input.title.trim()) throw new Error('Give your dream a name');
+  return save('dreams', { ...input, title: input.title.trim(), target_on: input.target_on ?? null, completed_at: null } as Partial<Dream>) as Promise<Dream>;
+}
+
+export async function updateDream(dream: Dream, input: DreamInput): Promise<void> {
+  checkAmount(input.target_minor);
+  if (!input.title.trim()) throw new Error('Give your dream a name');
+  await patch('dreams', dream.id, { ...input, title: input.title.trim(), target_on: input.target_on ?? null });
+  await refreshDreamCompletion(dream.id);
+}
+
+async function dreamSavedNow(dreamId: string): Promise<Minor> {
+  const es = await db.dream_entries.where('dream_id').equals(dreamId).toArray();
+  return Math.max(0, es.filter((e) => !e.deleted_at).reduce((s, e) => s + e.amount_minor, 0));
+}
+
+/** Sets or clears completed_at to match saved vs target. Returns true when it just became complete. */
+export async function refreshDreamCompletion(dreamId: string): Promise<boolean> {
+  const d = await db.dreams.get(dreamId);
+  if (!d || d.deleted_at) return false;
+  const done = (await dreamSavedNow(dreamId)) >= d.target_minor;
+  if (done && !d.completed_at) {
+    await patch('dreams', dreamId, { completed_at: new Date().toISOString() });
+    return true;
+  }
+  if (!done && d.completed_at) await patch('dreams', dreamId, { completed_at: null });
+  return false;
+}
+
+export interface DreamMoneyInput {
+  /** positive amount */
+  amount_minor: Minor;
+  mode: 'add' | 'withdraw';
+  entered_on: ISODate;
+  note?: string;
+  /** also move real money between two accounts (net-worth neutral) */
+  transfer?: { from_account_id: string; to_account_id: string } | null;
+}
+
+/** Adds (or takes out) money earmarked for a dream, optionally with a linked transfer. */
+export async function addDreamMoney(dream: Dream, input: DreamMoneyInput): Promise<{ entry: DreamEntry; completed: boolean }> {
+  checkAmount(input.amount_minor);
+  if (input.mode === 'withdraw' && input.amount_minor > (await dreamSavedNow(dream.id))) throw new Error('That’s more than this dream has saved');
+  if (input.transfer && input.transfer.from_account_id === input.transfer.to_account_id) throw new Error('Pick two different accounts');
+  const entry = await db.transaction('rw', db.dream_entries, db.transactions, db.meta, async () => {
+    let txId: string | null = null;
+    if (input.transfer) {
+      const tx = await saveTransaction({
+        type: 'transfer',
+        amount_minor: input.amount_minor,
+        account_id: input.transfer.from_account_id,
+        to_account_id: input.transfer.to_account_id,
+        occurred_on: input.entered_on,
+        note: `${input.mode === 'add' ? 'For' : 'From'} ${dream.title}`,
+      });
+      txId = tx.id;
+    }
+    return (await save('dream_entries', {
+      dream_id: dream.id,
+      amount_minor: input.mode === 'add' ? input.amount_minor : -input.amount_minor,
+      entered_on: input.entered_on,
+      note: (input.note ?? '').trim(),
+      transaction_id: txId,
+    } as Partial<DreamEntry>)) as DreamEntry;
+  });
+  const completed = await refreshDreamCompletion(dream.id);
+  return { entry, completed };
+}
+
+/** Deletes an entry and its linked transfer. Returns ids for undo. */
+export async function deleteDreamEntry(entry: DreamEntry): Promise<{ txIds: string[] }> {
+  const txIds = entry.transaction_id ? [entry.transaction_id] : [];
+  await softDelete('dream_entries', [entry.id]);
+  if (txIds.length) await softDelete('transactions', txIds);
+  await refreshDreamCompletion(entry.dream_id);
+  return { txIds };
+}
+
+export async function undoDeleteDreamEntry(entry: DreamEntry, txIds: string[]): Promise<void> {
+  await restore('dream_entries', [entry.id]);
+  if (txIds.length) await restore('transactions', txIds);
+  await refreshDreamCompletion(entry.dream_id);
+}
+
+/** Deletes a dream and its entries. Linked transfers stay: they were real money moves. */
+export async function deleteDream(dream: Dream): Promise<string[]> {
+  const ids = (await db.dream_entries.where('dream_id').equals(dream.id).toArray()).filter((e) => !e.deleted_at).map((e) => e.id);
+  await softDelete('dream_entries', ids);
+  await softDelete('dreams', [dream.id]);
+  return ids;
+}
+
+export async function undoDeleteDream(dreamId: string, entryIds: string[]): Promise<void> {
+  await restore('dreams', [dreamId]);
+  await restore('dream_entries', entryIds);
 }
 
 /* ---------- Danger ---------- */
