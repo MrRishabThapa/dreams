@@ -10,6 +10,12 @@ import { parseMoney } from '../domain/money';
 import { isStandalone } from '../lib/app';
 import { useSpring } from '../lib/motion';
 import { useRestore } from '../ui/useRestore';
+import { Sheet } from '../ui/Sheet';
+import { NavButton } from '../ui/Button';
+import { useToast } from '../ui/Toast';
+import { SignInForm } from '../sheets/SyncSheet';
+import { syncConfigured } from '../sync/config';
+import { db } from '../db/db';
 import type { AccountKind } from '../domain/types';
 import { Logo } from '../ui/Logo';
 
@@ -24,6 +30,17 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   const [target, setTarget] = useState('');
   const t = useSpring();
   const restore = useRestore({ confirmReplace: false, onDone });
+  const [signIn, setSignIn] = useState(false);
+  const toast = useToast();
+
+  // A second device: sign in first and pull everything, instead of creating duplicate defaults.
+  const afterSignIn = async () => {
+    setSignIn(false);
+    if ((await db.accounts.filter((a) => !a.deleted_at).count()) > 0) {
+      await setMeta('onboarded', true);
+      onDone();
+    } else toast({ message: 'Nothing in your sync account yet. Set up this iPhone to start.' });
+  };
   const balParsed = bal.trim() === '' ? 0 : parseMoney(bal);
   const targetParsed = target.trim() === '' ? null : parseMoney(target);
 
@@ -85,8 +102,13 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
               </div>
               <div className="flex flex-col gap-1 px-6">
                 <Button block onClick={() => setStep('account')}>Get Started</Button>
+                {syncConfigured() && <Button variant="plain" block onClick={() => setSignIn(true)}>Sign In to Sync</Button>}
                 <Button variant="plain" block onClick={restore.open}>Restore from a Backup</Button>
                 {restore.input}
+                <Sheet open={signIn} onClose={() => setSignIn(false)} title="Sign In" label="Sign in to sync" left={<NavButton onClick={() => setSignIn(false)}>Cancel</NavButton>}>
+                  <p className="mx-8 mb-5 mt-1 text-center text-subhead text-label-2">Already use Dreams on another device? Sign in to bring everything here.</p>
+                  <SignInForm onSignedIn={() => void afterSignIn()} />
+                </Sheet>
               </div>
             </>,
           )}
