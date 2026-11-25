@@ -6,11 +6,11 @@
 
 **Know your money. Fund your dreams.**
 
-A private, offline-first money app for iPhone and android. Track what you own and owe, log every rupee
+A private, offline-first money app for your phone (built for iPhone, works on Android too). Track what you own and owe, log every rupee
 in seconds, close each month with a proper audit, and save toward the things you want.
-Installed from Safari as a home-screen app (PWA), with optional sync to your own Supabase project.
+Installed from the browser as a home-screen app (PWA), with optional sync to your own Supabase project.
 
-`v1.1` · React 18 · TypeScript · Vite · IndexedDB · Supabase · iOS 16+
+`v1.1` · React 18 · TypeScript · Vite · IndexedDB · Supabase · iOS 16+ · Android (Chrome)
 
 </div>
 
@@ -78,7 +78,7 @@ Screenshots are from the iPhone X layout (375×812) with made-up demo data.
 - Write a reflection, set next month's target, and **Close month** to lock a snapshot. Home reminds you when last month is ready.
 
 **Privacy and safety**
-- Works **fully offline**; your data lives on the iPhone (IndexedDB).
+- Works **fully offline**; your data lives on your phone (IndexedDB).
 - **App lock** with a 4–6 digit PIN (PBKDF2-hashed, never leaves the phone), auto-lock, and a privacy cover in the app switcher.
 - **Hide balances** blurs every amount for use in public.
 - **Backup / restore** as one JSON file, plus CSV and plain-text exports through the iOS share sheet.
@@ -90,18 +90,30 @@ Screenshots are from the iPhone X layout (375×812) with made-up demo data.
 
 ---
 
-## Install on your iPhone
+## Install on your phone
 
-Dreams is a web app you add to the Home Screen; no App Store needed.
+Dreams is a web app you add to the Home Screen: no App Store or Play Store needed.
 
-1. Open the site (your Cloudflare Pages address, e.g. `https://dreams-xxx.pages.dev`) in **Safari**. Only Safari can install it.
+### iPhone (iOS 16+)
+
+1. Open the site (your Cloudflare Pages address, e.g. `https://dreams-xxx.pages.dev`) in **Safari**. Only Safari can install it on iOS.
 2. Tap **Share** → **Add to Home Screen** → **Add**.
 3. Open **Dreams from the Home Screen icon**, then set it up there.
    Safari and the installed app keep **separate storage** on iOS, so don't enter data in the Safari tab.
-4. Choose one:
-   - **Get Started**: add your first account and its current balance.
-   - **Sign In to Sync**: on a second device, pull everything from your Supabase account.
-   - **Restore from a Backup**: pick a Dreams `.json` backup from Files or iCloud Drive.
+
+### Android (Chrome)
+
+1. Open the same address in **Chrome**.
+2. Tap **⋮** → **Install app** (older versions say **Add to Home screen**), or accept the install prompt if Chrome shows one.
+3. Open **Dreams** from the app drawer or Home Screen. It runs in its own window and works offline.
+   On Android the installed app shares storage with Chrome for that site, so data is the same in both.
+
+### First run (both)
+
+Choose one:
+- **Get Started**: add your first account and its current balance.
+- **Sign In to Sync**: on a second device, pull everything from your Supabase account.
+- **Restore from a Backup**: pick a Dreams `.json` backup (Files / iCloud Drive on iPhone, Files / Drive on Android).
 
 Updates install themselves: when a new version is deployed, Dreams shows **Update available · Reload**.
 
@@ -238,7 +250,7 @@ docs/          README screenshots
 ## Data and privacy
 
 - No analytics, ads, trackers, web fonts or CDNs. Everything the app needs is bundled.
-- Your data stays on your iPhone unless you turn on sync, and then it goes only to **your** Supabase
+- Your data stays on your phone unless you turn on sync, and then it goes only to **your** Supabase
   project, protected by row-level security with a single user and sign-ups disabled.
 - The app-lock PIN is stored only as a salted hash on the device and is never backed up or synced.
 - Keep a JSON backup now and then (Settings → Back Up Now); it doesn't depend on Supabase.
