@@ -6,6 +6,8 @@ import { Money } from '../ui/Money';
 import { ProgressRing, Sparkline, EmptyState, Art } from '../ui/bits';
 import { TxGroups } from '../ui/TxList';
 import { goToTab, useApp } from '../lib/app';
+import { SyncChip } from '../ui/SyncChip';
+import { useSync } from '../sync/useSync';
 import { liveDreams, liveTxs, useData, useNetWorth } from '../db/hooks';
 import { DreamCard } from '../sheets/DreamSheets';
 import { dreamProgress } from '../domain/dreams';
@@ -38,6 +40,7 @@ export function Home() {
   const data = useData();
   const { hide, setHide, openSheet, settings } = useApp();
   const online = useOnline();
+  const sync = useSync();
   const nw = useNetWorth(data);
   const now = today();
   const thisMonth = monthOf(now);
@@ -74,7 +77,9 @@ export function Home() {
         </>
       }
       below={
-        !online ? (
+        sync.chip ? (
+          <div className="mx-4 -mt-1 mb-3"><SyncChip onPress={() => openSheet({ kind: 'sync' })} /></div>
+        ) : !online ? (
           <div className="chrome mx-4 -mt-1 mb-3 inline-flex items-center gap-1.5 rounded-full bg-fill px-2.5 py-1 text-footnote font-medium text-label-2">
             <WifiOff size={13} /> Offline · saved on this iPhone
           </div>
