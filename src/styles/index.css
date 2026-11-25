@@ -212,3 +212,13 @@ input, textarea, select {
 
 /* Keyboard focus follows the accent. */
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+/* Date inputs: WebKit ignores text-align on the input itself, so align its value part. */
+input[type='date'] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 44px;
+}
+input[type='date'].text-right::-webkit-date-and-time-value {
+  text-align: right;
+}
