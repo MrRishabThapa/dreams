@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { db } from '../db/db';
 import { patch } from '../db/repo';
-import type { Account, Debt, Transaction, TxType, UserSettings } from '../domain/types';
+import type { Account, Debt, Dream, Transaction, TxType, UserSettings } from '../domain/types';
 
 export type SheetReq =
   | { kind: 'add'; tx?: Transaction; type?: TxType; accountId?: string }
@@ -13,7 +13,10 @@ export type SheetReq =
   | { kind: 'settings' }
   | { kind: 'debt'; debt?: Debt; direction?: Debt['direction'] }
   | { kind: 'debtDetail'; id: string }
-  | { kind: 'payment'; debtId: string };
+  | { kind: 'payment'; debtId: string }
+  | { kind: 'dream'; dream?: Dream }
+  | { kind: 'dreamDetail'; id: string }
+  | { kind: 'dreamMoney'; dreamId: string; mode: 'add' | 'withdraw' };
 
 export interface SheetEntry {
   key: number;
