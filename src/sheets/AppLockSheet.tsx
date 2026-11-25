@@ -7,6 +7,7 @@ import { Toggle } from '../ui/bits';
 import { PinPad } from '../ui/PinPad';
 import { useToast } from '../ui/Toast';
 import { disableLock, getLock, setAutoLock, setPin, verifyPin, type LockConfig } from '../lib/lock';
+import { Logo } from '../ui/Logo';
 
 const DELAYS: { ms: number; label: string }[] = [
   { ms: 0, label: 'Immediately' },
@@ -138,7 +139,7 @@ export function AppLockSheet({ open, onClose, z }: { open: boolean; onClose: () 
         </>
       ) : (
         <div className="flex flex-col items-center px-8 pt-8 text-center">
-          <img src="/apple-touch-icon.png" alt="" className="h-16 w-16 rounded-[15px]" />
+          <Logo size={64} />
           <h2 className="mt-4 text-title3">Lock Dreams with a PIN</h2>
           <p className="mt-2 text-subhead text-label-2">
             Ask for a 4 or 6-digit PIN when you open Dreams, and hide your balances in the app switcher. The PIN stays on this iPhone and isn’t in backups. If you forget it, the only way back is to erase and restore a backup.
