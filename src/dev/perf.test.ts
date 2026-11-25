@@ -14,7 +14,7 @@ import type { Ledger, Transaction } from '../domain/types';
  */
 describe('performance budget (heavy year)', () => {
   const { backup } = demoYear('2026-11-25');
-  const base = backup.tables.transactions as Transaction[];
+  const base = backup.tables.transactions as unknown as Transaction[];
   const transactions: Transaction[] = [];
   for (let k = 0; k < 5; k++) for (const t of base) transactions.push({ ...t, id: `${t.id}-${k}`, debt_id: k === 0 ? t.debt_id : null, debt_event: k === 0 ? t.debt_event : null });
   const l: Ledger = { accounts: backup.tables.accounts as never, transactions, debts: backup.tables.debts as never };
