@@ -6,7 +6,9 @@ import { Money } from '../ui/Money';
 import { ProgressRing, Sparkline, EmptyState, Art } from '../ui/bits';
 import { TxGroups } from '../ui/TxList';
 import { goToTab, useApp } from '../lib/app';
-import { liveTxs, useData, useNetWorth } from '../db/hooks';
+import { liveDreams, liveTxs, useData, useNetWorth } from '../db/hooks';
+import { DreamCard } from '../sheets/DreamSheets';
+import { dreamProgress } from '../domain/dreams';
 import { monthStats, netWorthSeries } from '../domain/ledger';
 import { addMonths, monthLabel, monthOf, today } from '../domain/dates';
 import { formatMoney } from '../domain/money';
@@ -45,6 +47,7 @@ export function Home() {
   const accounts = useMemo(() => new Map((data?.accounts ?? []).map((a) => [a.id, a])), [data]);
   const categories = useMemo(() => new Map((data?.categories ?? []).map((c) => [c.id, c])), [data]);
   const debts = useMemo(() => new Map((data?.debts ?? []).map((d) => [d.id, d])), [data]);
+  const dreams = useMemo(() => liveDreams(data).map((d) => ({ d, p: dreamProgress(d, data?.dream_entries ?? [], now) })).sort((a, b) => Number(a.p.done) - Number(b.p.done)), [data, now]);
   const monthTxs = useMemo(() => liveTxs(data).filter((t) => t.occurred_on.startsWith(month)), [data, month]);
 
   const target = settings?.monthly_savings_target_minor ?? null;
@@ -123,6 +126,21 @@ export function Home() {
         </section>
       )}
       {stats && <p className="mx-8 mt-1.5 text-footnote text-label-2">{target ? <>Ring shows saved vs your <Money value={target} /> target.</> : 'Ring shows your savings rate. Set a target in Settings.'}</p>}
+
+      {/* dreams carousel */}
+      {dreams.length > 0 && (
+        <section aria-label="Dreams" className="mt-7">
+          <div className="mx-4 mb-2 flex items-center justify-between">
+            <h2 className="text-title3">Dreams</h2>
+            <button type="button" className="min-h-[44px] px-1 text-subhead font-medium text-accent" onClick={() => goToTab('dreams')}>See all</button>
+          </div>
+          <div className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1" style={{ scrollPaddingLeft: 16 }}>
+            {dreams.map(({ d, p }) => (
+              <DreamCard key={d.id} dream={d} progress={p} wide onPress={() => openSheet({ kind: 'dreamDetail', id: d.id })} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* recent */}
       <div className="mx-4 mb-2 mt-7 flex items-center justify-between">
