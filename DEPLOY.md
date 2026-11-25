@@ -49,7 +49,17 @@ Every later `npm run deploy` publishes a new version.
      - `VITE_SUPABASE_URL` = `https://cshqseusqlbwhgpfynyf.supabase.co`
      - `VITE_SUPABASE_ANON_KEY` = the **publishable** key (`sb_publishable_…`). Both are public by
        design and ship in the app; never put the secret/service-role key or the database password here.
+     - Add them as plain **Text** variables, not encrypted secrets: they are needed by `npm run build`.
 4. Save and deploy.
+
+Check the build log for one line: **`[dreams] sync configured: yes (https://…supabase.co)`**. On Cloudflare a
+build without the two variables now **fails** with a message saying what to add (set
+`DREAMS_ALLOW_NO_SYNC=1` only if you really want a build without sync). The key is never printed.
+
+**Don't add a `wrangler.toml` to this repo.** When a Pages project has one, Cloudflare treats it as the
+source of truth and the dashboard variables above are not applied to the build. That's exactly
+what broke the first v1.1 deploy: the dashboard listed the variables but the build never saw them.
+`npm run deploy` passes `--project-name dreams` itself, so no Wrangler file is needed.
 
 `public/_headers` (security headers, CSP, caching) is picked up automatically in both cases. The build
 fills the Supabase origin into the CSP's `connect-src`, so the app can talk to that one project only.
