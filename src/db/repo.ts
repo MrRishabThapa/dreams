@@ -1,5 +1,5 @@
 import { db, type SyncedTable } from './db';
-import type { Account, Base, Category, Debt, Dream, DreamEntry, ISODate, Minor, Transaction, UserSettings } from '../domain/types';
+import type { Account, Audit, Base, Category, Debt, Dream, DreamEntry, ISODate, Minor, Month, Transaction, UserSettings } from '../domain/types';
 import { DEFAULT_CATEGORIES, KIND_META } from '../lib/catalog';
 import { today } from '../domain/dates';
 import { debtRemaining } from '../domain/ledger';
@@ -399,6 +399,50 @@ export async function deleteDream(dream: Dream): Promise<string[]> {
 export async function undoDeleteDream(dreamId: string, entryIds: string[]): Promise<void> {
   await restore('dreams', [dreamId]);
   await restore('dream_entries', entryIds);
+}
+
+/* ---------- Audits ---------- */
+
+async function auditFor(month: Month): Promise<Audit | undefined> {
+  return db.audits.where('month').equals(month).first();
+}
+
+/** Keeps the reflection and next target while a month is still open (snapshot refreshed). */
+export async function saveAuditDraft(month: Month, snapshot: unknown, reflection: string, nextTarget: Minor | null): Promise<void> {
+  const existing = await auditFor(month);
+  if (existing) {
+    await patch('audits', existing.id, { snapshot, reflection, next_savings_target_minor: nextTarget, deleted_at: null });
+  } else {
+    await save('audits', { month, snapshot, reflection, next_savings_target_minor: nextTarget, closed_at: null } as Partial<Audit>);
+  }
+}
+
+/**
+ * Closes a month: stores the locked snapshot. A next-month savings target becomes the
+ * app's monthly target when it was set on the most recent month.
+ */
+export async function closeMonth(month: Month, snapshot: unknown, reflection: string, nextTarget: Minor | null): Promise<Audit> {
+  const existing = await auditFor(month);
+  const fields = { snapshot, reflection, next_savings_target_minor: nextTarget, closed_at: new Date().toISOString(), deleted_at: null };
+  let row: Audit;
+  if (existing) {
+    await patch('audits', existing.id, fields);
+    row = (await db.audits.get(existing.id))!;
+  } else {
+    row = (await save('audits', { month, ...fields } as Partial<Audit>)) as Audit;
+  }
+  if (nextTarget !== null && nextTarget > 0) {
+    const later = (await db.audits.toArray()).some((a) => !a.deleted_at && a.closed_at && a.month > month);
+    const settings = await getSettings();
+    if (!later && settings) await patch('user_settings', settings.id, { monthly_savings_target_minor: nextTarget });
+  }
+  return row;
+}
+
+/** Reopens a closed month. The reflection is kept; the report goes back to live numbers. */
+export async function reopenMonth(month: Month): Promise<void> {
+  const existing = await auditFor(month);
+  if (existing) await patch('audits', existing.id, { closed_at: null });
 }
 
 /* ---------- Danger ---------- */
