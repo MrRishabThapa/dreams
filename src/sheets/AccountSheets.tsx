@@ -191,6 +191,7 @@ export function AccountDetailSheet({ open, onClose, id, z }: { open: boolean; on
   const account = data?.accounts.find((a) => a.id === id);
   const accounts = useMemo(() => new Map((data?.accounts ?? []).map((a) => [a.id, a])), [data]);
   const categories = useMemo(() => new Map((data?.categories ?? []).map((c) => [c.id, c])), [data]);
+  const debts = useMemo(() => new Map((data?.debts ?? []).map((d) => [d.id, d])), [data]);
   const txs = liveTxs(data).filter((t) => t.account_id === id || t.to_account_id === id);
   const balance = bal.get(id) ?? 0;
 
@@ -237,7 +238,7 @@ export function AccountDetailSheet({ open, onClose, id, z }: { open: boolean; on
         <Action icon={<Plus size={20} />} label="Add" onPress={() => openSheet({ kind: 'add', accountId: account.id })} />
       </div>
       {txs.length ? (
-        <TxGroups txs={txs} accounts={accounts} categories={categories} perspective={account.id} />
+        <TxGroups txs={txs} accounts={accounts} categories={categories} debts={debts} perspective={account.id} />
       ) : (
         <EmptyState art={Art.list} title="No transactions yet" message="Money in and out of this account shows up here." />
       )}
