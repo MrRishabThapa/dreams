@@ -48,7 +48,7 @@ test('edit, then delete with undo', async ({ page }) => {
   // delete via edit sheet, confirm in action sheet, then undo
   await page.getByRole('button', { name: 'Edit Transport' }).click();
   await page.getByRole('button', { name: 'Delete transaction' }).click();
-  await page.getByRole('button', { name: 'Delete Transaction' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete Transaction' }).click();
   await expect.poll(() => netWorthValue(page)).toBe(100000);
   await page.getByRole('button', { name: 'Undo' }).click();
   await expect.poll(() => netWorthValue(page)).toBe(96000);
