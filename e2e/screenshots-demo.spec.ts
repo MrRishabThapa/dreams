@@ -38,6 +38,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await shot(page, scheme, '20-welcome-restore');
     await page.getByTestId('restore-input').setInputFiles(file);
     await expect(page.getByTestId('net-worth')).toBeVisible();
+    await expect(page.getByText('Backup restored')).toBeHidden({ timeout: 8000 }); // keep the toast out of the shots
     await shot(page, scheme, '21-home-demo');
 
     // audit for last month (ready to close)
