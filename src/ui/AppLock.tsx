@@ -3,6 +3,7 @@ import { PinPad } from './PinPad';
 import { useActionSheet } from './ActionSheet';
 import { getLock, verifyPin, type LockConfig } from '../lib/lock';
 import { resetAll } from '../db/repo';
+import { Logo } from './Logo';
 
 /**
  * Wraps the app. While locked, only the lock screen renders. Whenever the app goes to the
@@ -66,7 +67,7 @@ export function AppLockGate({ children }: { children: ReactNode }) {
 function PrivacyCover() {
   return (
     <div className="fixed inset-0 z-[500] flex items-center justify-center bg-bg" aria-hidden data-testid="privacy-cover">
-      <img src="/apple-touch-icon.png" alt="" className="h-20 w-20 rounded-[18px]" />
+      <Logo size={80} />
     </div>
   );
 }
@@ -106,7 +107,7 @@ function LockScreen({ lock, onUnlock }: { lock: LockConfig; onUnlock: () => void
 
   return (
     <div className="fixed inset-0 z-[400] flex flex-col items-center justify-center bg-bg" role="dialog" aria-modal="true" aria-label="Dreams is locked" style={{ paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
-      <img src="/apple-touch-icon.png" alt="" className="mb-6 h-14 w-14 rounded-[13px]" />
+      <Logo size={64} className="mb-6" />
       <PinPad
         length={lock.length}
         title="Enter PIN"
