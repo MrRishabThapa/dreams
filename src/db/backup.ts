@@ -1,5 +1,6 @@
 import { db, SYNCED_TABLES, type SyncedTable } from './db';
 import { getMeta, setMeta } from './repo';
+import { emitWrite } from './events';
 import type { Account, Category, Debt, Transaction } from '../domain/types';
 
 export const BACKUP_APP = 'dreams';
@@ -74,6 +75,7 @@ export async function restoreBackup(b: Backup): Promise<{ rows: number }> {
     await setMeta('lastAccountId', null);
     await setMeta('lastBackupAt', new Date().toISOString());
   });
+  emitWrite();
   return { rows };
 }
 
