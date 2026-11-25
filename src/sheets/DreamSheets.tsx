@@ -46,7 +46,7 @@ export function DreamCard({ dream, progress, onPress, wide }: { dream: Dream; pr
           {progress.done ? <Check size={18} strokeWidth={3} /> : <span className="text-[11px] font-bold tnum">{Math.round(progress.progress * 100)}%</span>}
         </ProgressRing>
       </div>
-      <div className="mt-3 truncate text-headline">{dream.title}</div>
+      <div className="mt-3 line-clamp-2 break-words text-headline">{dream.title}</div>
       <div className="mt-0.5 text-footnote font-medium opacity-80">
         <Money value={progress.saved} compact /> of <Money value={progress.target} compact />
       </div>
@@ -204,7 +204,7 @@ export function DreamDetailSheet({ open, onClose, id, z }: { open: boolean; onCl
 
       <Group header="Plan" footer={p.done ? undefined : 'Pace is the average of what you added over the last 3 months.'}>
         <Row title="Still needed" value={<Money value={p.remaining} />} />
-        <Row title="Pace" value={p.avgMonthly > 0 ? <><Money value={Math.round(p.avgMonthly)} /> / month</> : 'No recent money'} />
+        <Row title="Pace" value={p.avgMonthly > 0 ? <><Money value={Math.round(p.avgMonthly / 100) * 100} /> / month</> : 'No recent money'} />
         {dream.target_on && <Row title="Target date" value={shortDate(dream.target_on)} />}
         {p.neededMonthly !== null && (
           <Row title="Needed per month" value={<span className={p.behind ? 'text-warn' : ''}><Money value={p.neededMonthly} /></span>} />
