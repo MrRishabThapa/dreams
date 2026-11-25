@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 type Variant = 'filled' | 'tinted' | 'plain' | 'gray' | 'destructive';
 
 const styles: Record<Variant, string> = {
-  filled: 'bg-accent text-white',
+  filled: 'bg-accent text-on-accent',
   tinted: 'bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] text-accent',
   gray: 'bg-fill text-label',
   plain: 'text-accent',
