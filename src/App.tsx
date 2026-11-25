@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { AppProvider, useApp, type SheetEntry } from './lib/app';
 import { ToastProvider } from './ui/Toast';
 import { ActionSheetProvider } from './ui/ActionSheet';
@@ -8,8 +8,11 @@ import { TabBar, type Tab } from './ui/TabBar';
 import { UpdateBanner } from './ui/UpdateBanner';
 import { Home } from './screens/Home';
 import { MoneyScreen } from './screens/Money';
-import { AuditScreen } from './screens/Placeholders';
 import { DreamsScreen } from './screens/Dreams';
+
+// The audit (charts, exports) is loaded on first use to keep the first load small.
+const AuditScreen = lazy(() => import('./screens/Audit').then((m) => ({ default: m.AuditScreen })));
+const CategoryTxsSheet = lazy(() => import('./screens/Audit').then((m) => ({ default: m.CategoryTxsSheet })));
 import { Onboarding } from './screens/Onboarding';
 import { AddSheet } from './sheets/AddSheet';
 import { AccountDetailSheet, AccountSheet, CorrectSheet, PickAccountSheet } from './sheets/AccountSheets';
@@ -85,7 +88,11 @@ function Shell() {
         {tab === 'home' && <Home />}
         {tab === 'money' && <MoneyScreen />}
         {tab === 'dreams' && <DreamsScreen />}
-        {tab === 'audit' && <AuditScreen />}
+        {tab === 'audit' && (
+          <Suspense fallback={null}>
+            <AuditScreen />
+          </Suspense>
+        )}
       </motion.main>
       <TabBar tab={tab} onTab={go} onAdd={() => openSheet({ kind: 'add' })} />
       {sheets.map((s, i) => (
@@ -124,5 +131,11 @@ function SheetFor({ entry, z }: { entry: SheetEntry; z: number }) {
       return <DreamDetailSheet open={open} onClose={close} z={z} id={req.id} />;
     case 'dreamMoney':
       return <DreamMoneySheet open={open} onClose={close} z={z} dreamId={req.dreamId} mode={req.mode} />;
+    case 'categoryTxs':
+      return (
+        <Suspense fallback={null}>
+          <CategoryTxsSheet open={open} onClose={close} z={z} month={req.month} keyId={req.key} name={req.name} />
+        </Suspense>
+      );
   }
 }
