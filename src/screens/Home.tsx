@@ -5,7 +5,7 @@ import { IconButton, Button } from '../ui/Button';
 import { Money } from '../ui/Money';
 import { ProgressRing, Sparkline, EmptyState, Art } from '../ui/bits';
 import { TxGroups } from '../ui/TxList';
-import { useApp } from '../lib/app';
+import { goToTab, useApp } from '../lib/app';
 import { liveTxs, useData, useNetWorth } from '../db/hooks';
 import { monthStats, netWorthSeries } from '../domain/ledger';
 import { addMonths, monthLabel, monthOf, today } from '../domain/dates';
@@ -44,6 +44,7 @@ export function Home() {
   const series = useMemo(() => (data ? netWorthSeries(data, thisMonth, 6, now) : []), [data, thisMonth, now]);
   const accounts = useMemo(() => new Map((data?.accounts ?? []).map((a) => [a.id, a])), [data]);
   const categories = useMemo(() => new Map((data?.categories ?? []).map((c) => [c.id, c])), [data]);
+  const debts = useMemo(() => new Map((data?.debts ?? []).map((d) => [d.id, d])), [data]);
   const monthTxs = useMemo(() => liveTxs(data).filter((t) => t.occurred_on.startsWith(month)), [data, month]);
 
   const target = settings?.monthly_savings_target_minor ?? null;
@@ -97,9 +98,9 @@ export function Home() {
           <Sparkline values={series} width={112} height={36} color={delta6 < 0 ? 'var(--expense)' : 'var(--accent)'} />
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2">
-          <Stat label="Assets" value={nw.assets} onPress={() => window.dispatchEvent(new CustomEvent('dreams:tab', { detail: 'money' }))} />
-          <Stat label="Owed to me" value={nw.owedToMe} />
-          <Stat label="I owe" value={nw.iOwe} />
+          <Stat label="Assets" value={nw.assets} onPress={() => goToTab('money', 'accounts')} />
+          <Stat label="Owed to me" value={nw.owedToMe} onPress={() => goToTab('money', 'debts')} />
+          <Stat label="I owe" value={nw.iOwe} onPress={() => goToTab('money', 'debts')} />
         </div>
       </section>
 
@@ -133,7 +134,7 @@ export function Home() {
         </div>
       </div>
       {monthTxs.length ? (
-        <TxGroups txs={monthTxs} accounts={accounts} categories={categories} />
+        <TxGroups txs={monthTxs} accounts={accounts} categories={categories} debts={debts} />
       ) : (
         <EmptyState
           art={Art.coins}
