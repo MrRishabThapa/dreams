@@ -1,7 +1,9 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { checkSyncEnv, resolveSyncEnv } from './scripts/sync-env.mjs';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
@@ -10,25 +12,29 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
  * from VITE_SUPABASE_URL at build time, so connect-src allows exactly that one origin.
  */
 function supabaseCsp(origin: string): Plugin {
+  let outDir = 'dist';
   return {
     name: 'dreams-supabase-csp',
+    configResolved(c) {
+      outDir = resolve(c.root, c.build.outDir);
+    },
     transformIndexHtml: (html) => html.replace(/ ?%SUPABASE_ORIGIN%/g, origin ? ` ${origin}` : ''),
     closeBundle() {
-      const f = new URL('./dist/_headers', import.meta.url);
+      const f = resolve(outDir, '_headers');
       if (existsSync(f)) writeFileSync(f, readFileSync(f, 'utf8').replace(/ ?%SUPABASE_ORIGIN%/g, origin ? ` ${origin}` : ''));
     },
   };
 }
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), 'VITE_');
-  let supabaseOrigin = '';
-  try {
-    supabaseOrigin = env.VITE_SUPABASE_URL ? new URL(env.VITE_SUPABASE_URL).origin : '';
-  } catch {
-    supabaseOrigin = '';
-  }
+export default defineConfig(({ command, mode }) => {
+  // .env* files live here; DREAMS_ENV_DIR lets the build test point at an empty folder
+  const envDir = process.env.DREAMS_ENV_DIR || process.cwd();
+  // loadEnv merges .env* files with VITE_* vars from the process environment (hosted builds)
+  const sync = resolveSyncEnv(loadEnv(mode, envDir, 'VITE_'));
+  if (command === 'build') checkSyncEnv(sync, process.env);
+  const supabaseOrigin = sync.origin;
   return {
+  envDir,
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [
     react(),
