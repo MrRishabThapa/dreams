@@ -31,7 +31,7 @@ export async function netWorthValue(page: Page): Promise<number> {
 
 export async function addAccount(page: Page, name: string, kind: string, balance: string) {
   await page.getByRole('tab', { name: 'Money' }).click();
-  await page.getByRole('button', { name: 'Add account' }).click();
+  await page.getByRole('button', { name: 'Add account', exact: true }).click();
   const sheet = page.getByRole('dialog', { name: 'New account' });
   await sheet.getByLabel('Account name').fill(name);
   await sheet.getByRole('button', { name: kind, exact: true }).click();
