@@ -13,7 +13,11 @@ const now = new Date();
 const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
 async function shot(page: Page, scheme: string, name: string, fullPage = false) {
-  await page.waitForTimeout((await page.getByRole('dialog').count()) ? 1200 : 600);
+  const dialogs = page.getByRole('dialog');
+  const n = await dialogs.count();
+  // wait for the top sheet to finish sliding in (headless WebKit runs springs slowly on first open)
+  if (n) await expect(dialogs.nth(n - 1).getByRole('button').first()).toBeInViewport({ ratio: 1 });
+  await page.waitForTimeout(n ? 700 : 500);
   await page.screenshot({ path: `screenshots/${scheme}/${name}.png`, fullPage });
 }
 
