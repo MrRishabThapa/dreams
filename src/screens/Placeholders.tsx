@@ -3,20 +3,6 @@ import { Button } from '../ui/Button';
 import { EmptyState, Art } from '../ui/bits';
 import { useApp } from '../lib/app';
 
-export function DreamsScreen() {
-  const { openSheet } = useApp();
-  return (
-    <Page title="Dreams">
-      <EmptyState
-        art={Art.moon}
-        title="Fund your dreams"
-        message="Savings goals with progress rings and an ETA. Coming in a later update. Meanwhile, keep logging."
-        action={<Button size="md" onClick={() => openSheet({ kind: 'add' })}>Add Transaction</Button>}
-      />
-    </Page>
-  );
-}
-
 export function AuditScreen() {
   const { openSheet } = useApp();
   return (
