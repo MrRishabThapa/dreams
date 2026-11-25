@@ -1,6 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { db } from '../db/db';
 import { getSettings, patch } from '../db/repo';
 import { ensureSyncSlots } from '../db/sync';
 import type { Account, Debt, Dream, Transaction, TxType, UserSettings } from '../domain/types';
