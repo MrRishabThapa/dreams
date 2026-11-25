@@ -16,7 +16,8 @@ export type SheetReq =
   | { kind: 'payment'; debtId: string }
   | { kind: 'dream'; dream?: Dream }
   | { kind: 'dreamDetail'; id: string }
-  | { kind: 'dreamMoney'; dreamId: string; mode: 'add' | 'withdraw' };
+  | { kind: 'dreamMoney'; dreamId: string; mode: 'add' | 'withdraw' }
+  | { kind: 'categoryTxs'; month: string; key: string; name: string };
 
 export interface SheetEntry {
   key: number;
