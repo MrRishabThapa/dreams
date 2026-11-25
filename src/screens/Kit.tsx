@@ -27,7 +27,7 @@ export function Kit() {
   );
 }
 
-const TOKENS = ['bg', 'surface', 'surface-2', 'label', 'label-2', 'separator', 'accent', 'income', 'expense', 'warn'];
+const TOKENS = ['bg', 'surface', 'surface-2', 'label', 'label-2', 'separator', 'accent', 'on-accent', 'income', 'expense', 'warn', 'fill'];
 
 function KitBody() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => (document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'));
@@ -53,7 +53,7 @@ function KitBody() {
       </div>
 
       <Section title="Colors">
-        <div className="card grid grid-cols-5 gap-3 p-4">
+        <div className="card grid grid-cols-4 gap-3 p-4">
           {TOKENS.map((t) => (
             <div key={t} className="flex flex-col items-center gap-1">
               <span className="h-10 w-10 rounded-full border border-separator" style={{ background: `var(--${t})` }} />
