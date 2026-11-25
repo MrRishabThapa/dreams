@@ -1,5 +1,0 @@
-# Cloudflare Pages project for Dreams (static PWA, no server code).
-# Deploy: npm run deploy   (see DEPLOY.md)
-name = "dreams"
-pages_build_output_dir = "dist"
-compatibility_date = "2026-11-01"
