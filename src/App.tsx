@@ -6,6 +6,9 @@ import { ToastProvider } from './ui/Toast';
 import { ActionSheetProvider } from './ui/ActionSheet';
 import { TabBar, type Tab } from './ui/TabBar';
 import { UpdateBanner } from './ui/UpdateBanner';
+import { AppLockGate } from './ui/AppLock';
+import { AppLockSheet } from './sheets/AppLockSheet';
+import { CategoriesSheet, CategorySheet } from './sheets/CategorySheets';
 import { Home } from './screens/Home';
 import { MoneyScreen } from './screens/Money';
 import { DreamsScreen } from './screens/Dreams';
@@ -27,7 +30,9 @@ export function App() {
     <AppProvider>
       <ToastProvider>
         <ActionSheetProvider>
-          <Root />
+          <AppLockGate>
+            <Root />
+          </AppLockGate>
           <UpdateBanner />
         </ActionSheetProvider>
       </ToastProvider>
@@ -131,6 +136,12 @@ function SheetFor({ entry, z }: { entry: SheetEntry; z: number }) {
       return <DreamDetailSheet open={open} onClose={close} z={z} id={req.id} />;
     case 'dreamMoney':
       return <DreamMoneySheet open={open} onClose={close} z={z} dreamId={req.dreamId} mode={req.mode} />;
+    case 'categories':
+      return <CategoriesSheet open={open} onClose={close} z={z} />;
+    case 'category':
+      return <CategorySheet open={open} onClose={close} z={z} category={req.category} type={req.type} />;
+    case 'appLock':
+      return <AppLockSheet open={open} onClose={close} z={z} />;
     case 'categoryTxs':
       return (
         <Suspense fallback={null}>
