@@ -1,4 +1,4 @@
-# Deploying Dreams and installing it on the iPhone
+# Deploying Dreams and installing it on your phone
 
 Dreams is a static PWA: one `dist/` folder, no server and no secrets. It's hosted free on
 Cloudflare Pages (HTTPS is required for the service worker that makes it work offline).
@@ -65,16 +65,26 @@ what broke the first v1.1 deploy: the dashboard listed the variables but the bui
 fills the Supabase origin into the CSP's `connect-src`, so the app can talk to that one project only.
 If a build has no Supabase variables, Dreams still works fully; Settings → Sync just says it isn't set up.
 
-## 3. Install on the iPhone (iOS 16)
+## 3. Install on the phone
 
-1. Open the `https://…pages.dev` address in **Safari** (not Chrome; only Safari can install).
+### iPhone (iOS 16+)
+
+1. Open the `https://…pages.dev` address in **Safari** (not Chrome; only Safari can install on iOS).
 2. Tap **Share** → **Add to Home Screen** → name it **Dreams** → **Add**.
 3. Open Dreams **from the Home Screen icon**. Add your accounts there, **not in the Safari tab**:
    Safari and the installed app keep separate storage on iOS.
-4. Optional: Settings → App Lock to require a PIN.
+
+### Android (Chrome)
+
+1. Open the same address in **Chrome**.
+2. Tap **⋮** → **Install app** (or **Add to Home screen**), or accept Chrome's install prompt.
+3. Open **Dreams** from the app drawer. On Android the installed app and the Chrome tab share the
+   same storage for the site.
+
+Optional on both: Settings → App Lock to require a PIN.
 
 To start from an existing backup instead, tap **Restore from a Backup** on the welcome screen and
-pick the `.json` file (from Files or iCloud Drive).
+pick the `.json` file (Files or iCloud Drive on iPhone; Files or Drive on Android).
 
 ## 4. Smoke test on the phone
 
