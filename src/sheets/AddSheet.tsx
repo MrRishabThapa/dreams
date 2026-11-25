@@ -140,11 +140,12 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
       onClose={onClose}
       z={z}
       label="Add transaction"
+      fill
       title={title}
       left={<NavButton onClick={onClose}>Cancel</NavButton>}
       right={<NavButton bold onClick={() => save(false)} disabled={!amount}>Save</NavButton>}
     >
-      <div className="flex min-h-full flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
         {!isAdjust && (
           <div className="px-4">
             <Segmented
@@ -163,18 +164,18 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
         )}
 
         {/* amount display */}
-        <div key={shake} className={`px-5 pb-2 pt-4 text-center ${shake ? 'animate-[shake_.3s]' : ''}`} aria-live="polite">
+        <div key={shake} className={`shrink-0 px-5 pb-1 pt-2 text-center ${shake ? 'animate-[shake_.3s]' : ''}`} aria-live="polite">
           <div className="h-5 truncate text-footnote text-label-2 tnum">{hasOp ? expr.replace(/-/g, MINUS) : isAdjust ? (tx!.amount_minor < 0 ? 'Decrease' : 'Increase') : ' '}</div>
           <div className={`rounded-num money flex items-baseline justify-center gap-2 font-bold ${color}`} data-testid="amount">
             <span className="text-[24px] font-semibold text-label-2">{symbol}</span>
-            <span className="truncate text-[52px] leading-[60px] tracking-tight">
+            <span className="truncate text-[48px] leading-[56px] tracking-tight">
               {amount === null ? '—' : formatMoney(amount, { bare: true })}
             </span>
           </div>
         </div>
 
         {/* chips */}
-        <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pb-3 pt-1">
+        <div className="no-scrollbar flex shrink-0 gap-2 overflow-x-auto px-4 pb-3 pt-1">
           <Chip onClick={() => pickAccount('from')} icon={account ? <Icon name={account.icon} size={16} style={{ color: account.color ?? undefined }} /> : undefined} aria-label="Account">
             {account?.name ?? 'Account'} <ChevronDown size={14} className="ml-0.5 inline text-label-2" />
           </Chip>
@@ -206,8 +207,8 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
 
         {/* categories */}
         {mode !== 'transfer' && !isAdjust && (
-          <div className="grid grid-cols-4 gap-y-1 px-2" role="radiogroup" aria-label="Category">
-            {cats.slice(0, 12).map((c) => {
+          <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-4 overflow-y-auto overscroll-contain px-2" role="radiogroup" aria-label="Category">
+            {cats.map((c) => {
               const sel = cat.id === c.id;
               return (
                 <button
@@ -216,10 +217,10 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
                   role="radio"
                   aria-checked={sel}
                   onClick={() => setCat({ id: c.id, name: c.name })}
-                  className="pressable flex flex-col items-center gap-1 rounded-ctl py-1.5"
+                  className="pressable flex flex-col items-center gap-1 rounded-ctl py-1"
                 >
                   <span className={`rounded-[13px] p-[2px] ${sel ? 'ring-2 ring-accent ring-offset-2 ring-offset-[var(--sheet-bg)]' : ''}`}>
-                    <IconTile name={c.icon} color={c.color} size={42} />
+                    <IconTile name={c.icon} color={c.color} size={40} />
                   </span>
                   <span className={`max-w-full truncate px-1 text-[11px] ${sel ? 'font-semibold text-accent' : 'text-label-2'}`}>{c.name}</span>
                 </button>
@@ -228,7 +229,8 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
           </div>
         )}
 
-        <div className="px-4 pt-2">
+        {(mode === 'transfer' || isAdjust) && <div className="flex-1" />}
+        <div className="shrink-0 px-4 pt-2">
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -240,8 +242,7 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
           />
         </div>
 
-        <div className="flex-1" />
-        <div className="pt-3">
+        <div className="shrink-0 pt-2">
           <Keypad onKey={onKey} />
           <div className="flex gap-2 px-2 pt-2">
             {editing ? (
