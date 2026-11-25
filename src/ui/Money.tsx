@@ -32,8 +32,12 @@ export function Money({ value, className = '', animated = false, tone = 'none', 
     const c = animate(from, value, {
       duration: 0.45,
       ease: [0.22, 1, 0.36, 1],
+      // in-between frames show whole rupees only; the exact value lands on complete
       onUpdate: (v) => {
-        if (ref.current) ref.current.textContent = fmt(v);
+        if (ref.current) ref.current.textContent = fmt(Math.round(v / 100) * 100);
+      },
+      onComplete: () => {
+        if (ref.current) ref.current.textContent = fmt(value);
       },
     });
     return () => c.stop();
