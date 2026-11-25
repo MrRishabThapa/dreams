@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CloudOff, Download, FileSpreadsheet, Lock, Tags, Upload } from 'lucide-react';
+import { Cloud, CloudOff, Download, FileSpreadsheet, Lock, Tags, Upload } from 'lucide-react';
+import { SyncChip } from '../ui/SyncChip';
+import { useSync } from '../sync/useSync';
 import { Sheet } from '../ui/Sheet';
 import { NavButton } from '../ui/Button';
 import { Group, Row } from '../ui/List';
@@ -25,6 +27,7 @@ export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: ()
   const toast = useToast();
   const ask = useActionSheet();
   const restore = useRestore({ confirmReplace: true, onDone: onClose });
+  const sync = useSync();
   const [symbol, setSymbol] = useState(settings?.symbol ?? 'Rs');
   const [target, setTarget] = useState(settings?.monthly_savings_target_minor ? formatMoney(settings.monthly_savings_target_minor, { bare: true }).replace(/,/g, '') : '');
   const [persisted, setPersisted] = useState<boolean | null>(null);
@@ -38,7 +41,8 @@ export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: ()
   if (!settings) return null;
 
   const hasData = !!data && data.transactions.some((t) => !t.deleted_at);
-  const nudge = backupNudge(lastBackup ?? null, hasData);
+  // with sync on there is a cloud copy, so the backup nudge goes quiet
+  const nudge = sync.signedIn ? null : backupNudge(lastBackup ?? null, hasData);
   const lastLabel = lastBackup ? new Date(lastBackup).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Never';
 
   const saveSymbol = () => {
@@ -120,13 +124,14 @@ export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: ()
         <Row icon={ic(<Tags size={20} />)} title="Categories" chevron onPress={() => openSheet({ kind: 'categories' })} />
       </Group>
 
-      <Group header="Sync" className="mt-6" footer="Cloud sync arrives in a later update. Until then, back up regularly.">
+      <Group header="Sync" className="mt-6" footer={sync.signedIn ? undefined : 'Sign in to back up to your Supabase project and keep devices in step.'}>
         <Row
-          icon={ic(<CloudOff size={20} className="text-label-2" />)}
-          title={<span className="text-label-2">Sync with your account</span>}
-          value={<span className="rounded-full bg-fill px-2 py-0.5 text-caption font-semibold text-label-2">Local only</span>}
+          icon={ic(sync.signedIn ? <Cloud size={20} /> : <CloudOff size={20} className="text-label-2" />)}
+          title="Sync"
+          value={sync.signedIn ? <SyncChip /> : <span className="text-label-2">{sync.configured ? 'Off' : 'Not set up'}</span>}
+          chevron
+          onPress={() => openSheet({ kind: 'sync' })}
         />
-        <Row title={<span className="text-label-3">Coming soon</span>} />
       </Group>
 
       <Group header="Backup & export" className="mt-6" footer={nudge ?? 'A backup is one file with everything. Restoring it replaces what’s on this iPhone.'}>
