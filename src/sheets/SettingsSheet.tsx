@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CloudOff, Download, FileSpreadsheet, Upload } from 'lucide-react';
+import { CloudOff, Download, FileSpreadsheet, Lock, Tags, Upload } from 'lucide-react';
 import { Sheet } from '../ui/Sheet';
 import { NavButton } from '../ui/Button';
 import { Group, Row } from '../ui/List';
@@ -19,7 +19,7 @@ import { today } from '../domain/dates';
 const ic = (el: React.ReactNode) => <span className="flex h-[30px] w-[30px] items-center justify-center text-accent">{el}</span>;
 
 export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: () => void; z: number }) {
-  const { settings, setTheme, hide, setHide } = useApp();
+  const { settings, setTheme, hide, setHide, openSheet } = useApp();
   const data = useData();
   const toast = useToast();
   const ask = useActionSheet();
@@ -28,6 +28,7 @@ export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: ()
   const [target, setTarget] = useState(settings?.monthly_savings_target_minor ? formatMoney(settings.monthly_savings_target_minor, { bare: true }).replace(/,/g, '') : '');
   const [persisted, setPersisted] = useState<boolean | null>(null);
   const lastBackup = useLiveQuery(() => getMeta<string | null>('lastBackupAt', null), []);
+  const lockOn = useLiveQuery(async () => !!(await getMeta('appLock', null)), []);
 
   useEffect(() => {
     navigator.storage?.persisted?.().then(setPersisted).catch(() => setPersisted(null));
@@ -95,6 +96,10 @@ export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: ()
         </Row>
       </Group>
 
+      <Group header="Privacy" className="mt-6">
+        <Row icon={ic(<Lock size={20} />)} title="App Lock" value={lockOn ? 'On' : 'Off'} chevron onPress={() => openSheet({ kind: 'appLock' })} />
+      </Group>
+
       <Group header="Money" className="mt-6" footer="Amounts use lakh/crore grouping, e.g. Rs 1,20,000.">
         <label className="row sep flex min-h-[44px] items-center bg-surface pl-4">
           <span className="row-body flex flex-1 items-center gap-3 pr-4">
@@ -108,6 +113,10 @@ export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: ()
             <input value={target} onChange={(e) => setTarget(e.target.value)} onBlur={saveTarget} inputMode="decimal" placeholder="None" aria-label="Monthly savings target" className="money h-11 w-32 bg-transparent text-right text-[17px] text-label-2 outline-none placeholder:text-label-3" />
           </span>
         </label>
+      </Group>
+
+      <Group className="mt-6">
+        <Row icon={ic(<Tags size={20} />)} title="Categories" chevron onPress={() => openSheet({ kind: 'categories' })} />
       </Group>
 
       <Group header="Sync" className="mt-6" footer="Cloud sync arrives in a later update. Until then, back up regularly.">
