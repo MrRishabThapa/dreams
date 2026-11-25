@@ -19,7 +19,7 @@ export function UpdateBanner() {
         >
           <div className="flex min-h-[44px] items-center gap-2 rounded-full bg-[var(--toast-bg)] py-1.5 pl-5 pr-1.5 text-[15px] font-medium text-[var(--toast-fg)] shadow-float">
             <span>Update available</span>
-            <button type="button" className="min-h-[36px] rounded-full bg-accent px-4 font-semibold text-white" onClick={() => updateServiceWorker(true)}>
+            <button type="button" className="min-h-[36px] rounded-full bg-accent px-4 font-semibold text-on-accent" onClick={() => updateServiceWorker(true)}>
               Reload
             </button>
             <button type="button" aria-label="Later" className="min-h-[36px] px-2 text-label-2" onClick={() => setNeedRefresh(false)}>
