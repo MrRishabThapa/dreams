@@ -39,3 +39,15 @@ export async function addAccount(page: Page, name: string, kind: string, balance
   await sheet.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(sheet).toBeHidden();
 }
+
+/** Let the service worker take control, then go offline and reload. */
+export async function goOffline(page: Page) {
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+  await page.context().setOffline(true);
+  await page.reload();
+  await expect(page.getByTestId('net-worth')).toBeVisible();
+}
