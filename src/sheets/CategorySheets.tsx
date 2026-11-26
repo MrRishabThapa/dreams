@@ -86,7 +86,9 @@ export function CategorySheet({ open, onClose, category, type, z, onSaved }: { o
     if (category) await patch('categories', category.id, { name: name.trim(), icon, color });
     else {
       const sort = siblings.reduce((m, c) => Math.max(m, c.sort + 1), 0);
-      onSaved?.((await save('categories', { name: name.trim(), type, icon, color, sort } as Partial<Category>)) as Category);
+      // save first: onSaved?.(await save(…)) would skip the save when there's no callback
+      const row = (await save('categories', { name: name.trim(), type, icon, color, sort } as Partial<Category>)) as Category;
+      onSaved?.(row);
     }
     toast({ message: category ? 'Category saved' : `${name.trim()} added` });
     onClose();
