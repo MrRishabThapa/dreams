@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { checkSyncEnv, resolveSyncEnv } from './scripts/sync-env.mjs';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { PATCH_NOTES } from './src/data/patchNotes';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
@@ -31,7 +32,13 @@ export default defineConfig(({ command, mode }) => {
   const envDir = process.env.DREAMS_ENV_DIR || process.cwd();
   // loadEnv merges .env* files with VITE_* vars from the process environment (hosted builds)
   const sync = resolveSyncEnv(loadEnv(mode, envDir, 'VITE_'));
-  if (command === 'build') checkSyncEnv(sync, process.env);
+  if (command === 'build') {
+    checkSyncEnv(sync, process.env);
+    // every release adds a patch-notes entry; a version bump without one (or the reverse) fails the build
+    if (PATCH_NOTES[0]?.version !== pkg.version) {
+      throw new Error(`[dreams] package.json is ${pkg.version} but the newest entry in src/data/patchNotes.ts is ${PATCH_NOTES[0]?.version ?? 'missing'}. Add or fix the patch notes before building.`);
+    }
+  }
   const supabaseOrigin = sync.origin;
   return {
   envDir,
