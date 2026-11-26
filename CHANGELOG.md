@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.2.1 (2026-11-26)
+
+**Categories**
+- New category from the Add sheet: a **New** tile at the end of the category grid (expense or income) opens the
+  editor (name, icon, colour). The new category is selected right away and the entry keeps its amount, date and note.
+  Rename, recolour, reorder and delete (soft: past transactions keep the name) stay in Settings → Categories.
+- More default categories: Repairs & Maintenance, Watch & Accessories, Hobbies, Gadgets & Electronics, Subscriptions,
+  Groceries, Eating Out, Clothing, Personal Care, Internet & Mobile data, Gifts & Donations, Fees & Charges, Insurance, Taxes.
+  Existing installs get only the ones they don't have (matched by name or a close alias such as Transport for
+  Travel & Transport, deleted ones included). Existing categories are never changed. Default categories use the same id on every device,
+  and their timestamp is older than any edit, so two devices never duplicate them and a rename on one wins.
+- Picker: most-used first. Past 12 categories it folds to 10 tiles with **More**, and a search box appears when expanded.
+- More icons (watch, cart, wrench, umbrella, sparkles…) and violet/purple colours.
+- The audit, charts and statement import read categories from the table, so new and custom ones work there with no code change.
+
+**Patch notes**
+- Settings → About → **Patch notes**: the current version (from package.json at build time) and one card per release,
+  newest first, with New / Improved / Fixed lists. Data in `src/data/patchNotes.ts`.
+- The build fails if package.json's version and the newest patch-notes entry disagree.
+
 ## v1.2.0 (2026-11-26)
 
 **eSewa and other e-wallets**
