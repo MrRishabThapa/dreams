@@ -105,13 +105,30 @@ pick the `.json` file (Files or iCloud Drive on iPhone; Files or Drive on Androi
 Run `npm run deploy` again (or push, with option B). Next time Dreams opens online it shows
 **Update available · Reload**; tap Reload. Your data is untouched by updates.
 
-**Database changes:** some releases add a column to Supabase. Run the matching file from
-[`supabase/migrations/`](supabase/migrations/) in the Supabase SQL editor **before** using the new
-feature on a synced device (a fresh project just runs `supabase/schema.sql`, which already has it).
+## Schema changes: run before deploying a client that uses new columns
 
-| Release | Run | Needed for |
+Some releases add a column to Supabase. **Run the SQL first, then push/deploy.** If a client that
+writes a new column reaches a server without it, Settings → Sync shows **Server: Needs an update**
+with the SQL to run. Only that table waits (its changes stay on the phone, marked pending); every
+other table keeps syncing, and everything catches up on the next sync after the SQL is run.
+
+The full, idempotent block (safe to run any number of times; also at the end of
+[`supabase/schema.sql`](supabase/schema.sql)):
+
+```sql
+-- v1.2.2: the name in the Home greeting
+alter table public.user_settings add column if not exists display_name text;
+
+-- make PostgREST pick up new columns right away
+notify pgrst, 'reload schema';
+```
+
+| Release | Change | File |
 |---|---|---|
-| v1.2.2 | `20261126_user_settings_display_name.sql` (adds `user_settings.display_name`) | the name in the Home greeting. Until it's run, setting a name makes sync show an error: other changes still upload, but nothing downloads from your other devices. Nothing is lost; it all syncs once the column exists. |
+| v1.2.2 | `user_settings.display_name` (Home greeting) | [`supabase/migrations/20261126_user_settings_display_name.sql`](supabase/migrations/20261126_user_settings_display_name.sql) |
+
+Nothing else synced has changed since v1.1: eSewa import settings and the app lock (PIN hash,
+Face ID credential id, auto-lock) are stored only on the device and never synced.
 
 ## Sync (v1.1): the first real sync
 
