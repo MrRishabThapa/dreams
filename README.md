@@ -221,7 +221,7 @@ On **Arch Linux**, run `scripts/setup-webkit-arch.sh` once so Playwright's WebKi
 
 ## Testing
 
-- **130+ unit tests** (Vitest): money and date rules, balances, debts, dreams, the audit, backup/restore,
+- **125 unit tests** (Vitest): money and date rules, balances, debts, dreams, the audit, backup/restore,
   app lock and Face ID (mocked authenticator), the statement importer (mapping, debit/credit sign,
   paisa rounding, dedupe, category rules), wallet reconcile and audit math, sync against a fake server that behaves like the real schema (two devices, stale edits,
   a failed batch, deletes), a real build with environment variables, and a performance budget.
