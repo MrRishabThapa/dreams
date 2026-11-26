@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db, SYNCED_TABLES, type SyncedTable } from '../db/db';
-import { createAccount, ensureSettings, patch, saveTransaction, seedCategories, softDelete } from '../db/repo';
+import { createAccount, ensureSettings, migrateCategories, patch, save, saveTransaction, seedCategories, softDelete } from '../db/repo';
 import { pendingCount, pullTable, pushTable, syncAll, toLocal, PUSH_BATCH } from './engine';
 import { classify, SyncError } from './errors';
 import { supabaseRemote, type Remote, type RemoteRow, type Cursor } from './remote';
-import type { Transaction } from '../domain/types';
+import type { Category, Transaction } from '../domain/types';
+import { DEFAULT_CATEGORIES } from '../lib/catalog';
 
 /* ---------- a fake Supabase that behaves like schema.sql ---------- */
 
@@ -113,7 +114,7 @@ describe('sync engine (mocked Supabase)', () => {
     expect(got.dirty).toBe(0);
     expect('user_id' in got).toBe(false);
     expect('server_modified_at' in got).toBe(false);
-    expect(await db.categories.count()).toBe(15);
+    expect(await db.categories.count()).toBe(DEFAULT_CATEGORIES.length);
   });
 
   it('a stale offline edit never overwrites a newer one', async () => {
@@ -232,6 +233,57 @@ describe('sync errors are human-readable', () => {
     const s = classify({ message: 'duplicate key value' }, 409);
     expect(s.kind).toBe('server');
     expect(s.message).toMatch(/safe on this iPhone/);
+  });
+});
+
+describe('default categories across devices', () => {
+  const OLD = ['Food', 'Transport', 'Bills', 'Rent', 'Shopping', 'Health', 'Education', 'Family', 'Entertainment', 'Other'];
+  const names = async () => (await db.categories.toArray()).filter((c) => !c.deleted_at).map((c) => `${c.type}:${c.name}`);
+
+  it('two devices migrating offline end up with one copy of each, and a rename on one wins', async () => {
+    // an install from before v1.2.1: the old list, random ids
+    await ensureSettings();
+    for (const [i, n] of OLD.entries()) await save('categories', { name: n, type: 'expense', icon: null, color: null, sort: i } as Partial<Category>);
+    await save('categories', { name: 'Salary', type: 'income', icon: null, color: null, sort: 0 } as Partial<Category>);
+    expect((await syncAll(server)).error).toBeNull();
+    await useDevice('B');
+    expect((await syncAll(server)).error).toBeNull();
+    expect(await db.categories.count()).toBe(11);
+
+    // both update the app while offline and migrate on their own
+    const addedB = await migrateCategories();
+    await useDevice('A');
+    const addedA = await migrateCategories();
+    expect(addedA.map((c) => c.id)).toEqual(addedB.map((c) => c.id));
+    expect(addedA.map((c) => c.name)).toContain('Repairs & Maintenance');
+    const watch = addedA.find((c) => c.name === 'Watch & Accessories')!;
+    await patch('categories', watch.id, { name: 'Watches' });
+    expect((await syncAll(server)).error).toBeNull();
+
+    await useDevice('B');
+    expect((await syncAll(server)).error).toBeNull();
+    await useDevice('A');
+    expect((await syncAll(server)).error).toBeNull();
+
+    for (const dev of ['A', 'B']) {
+      await useDevice(dev);
+      const list = await names();
+      expect(new Set(list).size).toBe(list.length);
+      expect(list).toContain('expense:Watches');
+      expect(list).not.toContain('expense:Watch & Accessories');
+      expect(await migrateCategories()).toEqual([]);
+    }
+    expect(server.t('categories').size).toBe(11 + addedA.length);
+  });
+
+  it('a brand-new device that seeds and then syncs with another fresh device gets no duplicates', async () => {
+    await seedCategories();
+    expect((await syncAll(server)).error).toBeNull();
+    await useDevice('B');
+    await seedCategories();
+    expect((await syncAll(server)).error).toBeNull();
+    expect(await db.categories.count()).toBe(DEFAULT_CATEGORIES.length);
+    expect(server.t('categories').size).toBe(DEFAULT_CATEGORIES.length);
   });
 });
 
