@@ -13,6 +13,8 @@ export interface Remote {
   upsert(table: SyncedTable, rows: Record<string, unknown>[]): Promise<void>;
   /** Up to `limit` rows after the cursor, ordered by (server_modified_at, id). */
   pullAfter(table: SyncedTable, cursor: Cursor | null, limit: number): Promise<RemoteRow[]>;
+  /** Which of these columns the server doesn't have (`table.column`). Optional: fakes may skip it. */
+  missingColumns?(cols: { table: SyncedTable; column: string }[]): Promise<string[]>;
 }
 
 /** PostgREST filter values containing . : + , need double quotes. */
@@ -40,6 +42,24 @@ export function supabaseRemote(sb: SupabaseClient): Remote {
       }
       if (res.error) throw classify(res.error, res.status);
       return (res.data ?? []) as RemoteRow[];
+    },
+    async missingColumns(cols) {
+      const missing: string[] = [];
+      for (const c of cols) {
+        // selects nothing, but PostgREST still checks the column exists
+        let res;
+        try {
+          res = await sb.from(c.table).select(c.column).limit(0);
+        } catch (e) {
+          throw classify(e);
+        }
+        if (res.error) {
+          const err = classify(res.error, res.status);
+          if (err.kind !== 'schema') throw err;
+          missing.push(`${c.table}.${c.column}`);
+        }
+      }
+      return missing;
     },
   };
 }
