@@ -88,6 +88,8 @@ test('category editor: add, rename (history follows), and use in the Add sheet',
   await expect(page.getByRole('button', { name: 'Edit Food & dining' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Add transaction', exact: true }).click();
+  // 25 expense categories: the new one is past the first 10, under More
+  await page.getByRole('dialog', { name: 'Add transaction' }).getByRole('button', { name: 'More', exact: true }).click();
   await expect(page.getByRole('radio', { name: 'Coffee' })).toBeVisible();
 });
 
