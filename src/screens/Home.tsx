@@ -124,7 +124,7 @@ export function Home() {
 
   return (
     <Page
-      title={greeting}
+      title={name ? `${greeting}, ${name}` : greeting}
       heading={
         name ? (
           <span className="block min-w-0" data-testid="greeting">
