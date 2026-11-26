@@ -12,6 +12,7 @@ import { SyncSheet } from './sheets/SyncSheet';
 import { initSync } from './sync/controller';
 import { AppLockSheet } from './sheets/AppLockSheet';
 import { CategoriesSheet, CategorySheet } from './sheets/CategorySheets';
+import { PatchNotesSheet } from './sheets/PatchNotesSheet';
 import { Home } from './screens/Home';
 import { MoneyScreen } from './screens/Money';
 import { DreamsScreen } from './screens/Dreams';
@@ -27,7 +28,7 @@ import { AccountDetailSheet, AccountSheet, CorrectSheet, PickAccountSheet } from
 import { SettingsSheet } from './sheets/SettingsSheet';
 import { DebtDetailSheet, DebtSheet, PaymentSheet } from './sheets/DebtSheets';
 import { DreamDetailSheet, DreamMoneySheet, DreamSheet } from './sheets/DreamSheets';
-import { getMeta } from './db/repo';
+import { getMeta, migrateCategories } from './db/repo';
 import { db } from './db/db';
 
 export function App() {
@@ -85,7 +86,10 @@ function Shell() {
   };
 
   useEffect(() => {
-    void initSync();
+    // new default categories first (stable ids, so a sync right after never duplicates them)
+    void migrateCategories()
+      .catch(() => undefined)
+      .then(() => initSync());
   }, []);
 
   useEffect(() => {
@@ -155,7 +159,9 @@ function SheetFor({ entry, z }: { entry: SheetEntry; z: number }) {
     case 'categories':
       return <CategoriesSheet open={open} onClose={close} z={z} />;
     case 'category':
-      return <CategorySheet open={open} onClose={close} z={z} category={req.category} type={req.type} />;
+      return <CategorySheet open={open} onClose={close} z={z} category={req.category} type={req.type} onSaved={req.onSaved} />;
+    case 'patchNotes':
+      return <PatchNotesSheet open={open} onClose={close} z={z} />;
     case 'sync':
       return <SyncSheet open={open} onClose={close} z={z} />;
     case 'appLock':
