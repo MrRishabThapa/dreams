@@ -18,6 +18,8 @@ import { DreamsScreen } from './screens/Dreams';
 
 // The audit (charts, exports) is loaded on first use to keep the first load small.
 const AuditScreen = lazy(() => import('./screens/Audit').then((m) => ({ default: m.AuditScreen })));
+// The statement importer is only needed when importing.
+const ImportSheet = lazy(() => import('./sheets/ImportSheet').then((m) => ({ default: m.ImportSheet })));
 const CategoryTxsSheet = lazy(() => import('./screens/Audit').then((m) => ({ default: m.CategoryTxsSheet })));
 import { Onboarding } from './screens/Onboarding';
 import { AddSheet } from './sheets/AddSheet';
@@ -128,6 +130,12 @@ function SheetFor({ entry, z }: { entry: SheetEntry; z: number }) {
       return <AccountDetailSheet open={open} onClose={close} z={z} id={req.id} />;
     case 'correct':
       return <CorrectSheet open={open} onClose={close} z={z} account={req.account} />;
+    case 'import':
+      return (
+        <Suspense fallback={null}>
+          <ImportSheet open={open} onClose={close} z={z} accountId={req.accountId} />
+        </Suspense>
+      );
     case 'pickAccount':
       return <PickAccountSheet open={open} onClose={close} z={z} title={req.title} exclude={req.exclude} onPick={req.onPick} />;
     case 'settings':
