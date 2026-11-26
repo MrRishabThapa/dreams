@@ -18,6 +18,8 @@ class FakeServer implements Remote {
   upserts = 0;
   /** throw on the n-th upsert call (1-based) */
   failOnUpsert: number | null = null;
+  /** columns the server doesn't have yet, per table (like a project that missed a schema change) */
+  missing: Partial<Record<SyncedTable, string[]>> = {};
   /** runs before an upsert resolves (to simulate a local edit during upload) */
   beforeResolve: (() => Promise<void>) | null = null;
 
@@ -32,6 +34,10 @@ class FakeServer implements Remote {
   async upsert(table: SyncedTable, rows: Record<string, unknown>[]) {
     this.upserts++;
     if (this.failOnUpsert === this.upserts) throw new SyncError('server', 'boom');
+    for (const col of this.missing[table] ?? []) {
+      // what PostgREST answers (400, PGRST204); the whole statement fails
+      if (rows.some((r) => col in r)) throw classify({ code: 'PGRST204', message: `Could not find the '${col}' column of '${table}' in the schema cache` }, 400);
+    }
     const ts = this.now();
     for (const r of rows) {
       const cur = this.t(table).get(r.id as string);
@@ -225,6 +231,46 @@ describe('sync engine (mocked Supabase)', () => {
 });
 
 describe('sync errors are human-readable', () => {
+  it('a missing server column only holds back that table: the rest pushes and pulls, the rows stay dirty, then catch up', async () => {
+    await setupA();
+    const s = (await db.user_settings.toArray())[0];
+    await patch('user_settings', s.id, { display_name: 'Rishab' });
+    server.missing.user_settings = ['display_name'];
+
+    const r = await syncAll(server);
+    expect(r.error?.kind).toBe('schema');
+    expect(r.error?.message).toMatch(/Server needs an update \(user_settings\.display_name is missing\)/);
+    // everything else went up
+    expect(server.t('transactions').size).toBe(1);
+    expect(server.t('categories').size).toBe(DEFAULT_CATEGORIES.length);
+    expect(server.t('user_settings').size).toBe(0);
+    // the settings row is still waiting, never marked synced
+    expect((await db.user_settings.get(s.id))!.dirty).toBe(1);
+    expect(await pendingCount()).toBe(1);
+
+    // the column is added on the server: the next sync finishes the job
+    server.missing = {};
+    const r2 = await syncAll(server);
+    expect(r2.error).toBeNull();
+    expect(await pendingCount()).toBe(0);
+    expect(server.t('user_settings').get(s.id)!.display_name).toBe('Rishab');
+  });
+
+  it('other errors still stop the sync without losing anything', async () => {
+    await setupA();
+    server.failOnUpsert = 1;
+    const r = await syncAll(server);
+    expect(r.error?.kind).toBe('server');
+    expect(await pendingCount()).toBeGreaterThan(0);
+  });
+
+  it('classifies the iPhone’s schema-cache message as a schema error', () => {
+    const e = classify({ code: 'PGRST204', message: "Could not find the 'display_name' column of 'user_settings' in the schema cache" }, 400);
+    expect(e.kind).toBe('schema');
+    expect(e.message).toMatch(/run the schema SQL/);
+    expect(classify({ code: '42703', message: 'column user_settings.display_name does not exist' }, 400).kind).toBe('schema');
+  });
+
   it('classifies offline, paused, expired sign-in and server errors', () => {
     expect(classify(new TypeError('Load failed')).kind).toBe('offline');
     expect(classify({ message: 'Project paused' }).kind).toBe('paused');

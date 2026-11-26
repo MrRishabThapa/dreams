@@ -84,15 +84,29 @@ export interface SyncResult {
   error: SyncError | null;
 }
 
-/** Push every table, then pull every table. Stops at the first error; nothing is lost. */
+/**
+ * Push every table, then pull every table. Stops at the first error (offline, auth, paused,
+ * server); nothing is lost. A schema error (the server lacks a column the app sends) only
+ * skips pushing that table: its rows stay dirty for the next sync, every other table still
+ * pushes and pulls, and the schema error is reported at the end.
+ */
 export async function syncAll(remote: Remote): Promise<SyncResult> {
   let pushed = 0;
   let pulled = 0;
+  let schemaError: SyncError | null = null;
   try {
-    for (const t of SYNCED_TABLES) pushed += await pushTable(remote, t);
+    for (const t of SYNCED_TABLES) {
+      try {
+        pushed += await pushTable(remote, t);
+      } catch (e) {
+        const err = classify(e);
+        if (err.kind !== 'schema') throw err;
+        schemaError ??= err;
+      }
+    }
     for (const t of SYNCED_TABLES) pulled += await pullTable(remote, t);
-    await setMeta('sync:lastSyncedAt', new Date().toISOString());
-    return { pushed, pulled, error: null };
+    if (!schemaError) await setMeta('sync:lastSyncedAt', new Date().toISOString());
+    return { pushed, pulled, error: schemaError };
   } catch (e) {
     return { pushed, pulled, error: classify(e) };
   }
