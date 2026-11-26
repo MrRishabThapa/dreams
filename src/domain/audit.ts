@@ -4,6 +4,7 @@ import { addMonths, monthEnd, monthName, monthOf, parseISODate } from './dates';
 import { debtRemaining } from './ledger';
 import { dreamsFundedIn } from './dreams';
 import { formatMoney } from './money';
+import { walletMonths, type WalletMonth } from './wallet';
 
 /**
  * A locked, self-contained picture of one month. Closed months render from this
@@ -21,6 +22,8 @@ export interface AuditSnapshot {
   /** netWorthChange / |netWorthStart|; null when the start is 0 */
   netWorthChangePct: number | null;
   savingsTarget: Minor | null;
+  /** one section per e-wallet (eSewa…), from that account's transactions only; absent in older snapshots */
+  wallets?: WalletMonth[];
   summary: string;
   insights: string[];
 }
@@ -94,6 +97,7 @@ export function buildAuditSnapshot(input: AuditInput): AuditSnapshot {
     debtsOutstanding: { iOwe: nwEnd.iOwe, owedToMe: nwEnd.owedToMe, overdue },
     netWorthChangePct,
     savingsTarget,
+    wallets: walletMonths(ledger, month, categories),
     summary: '',
     insights: [],
   };
@@ -212,6 +216,12 @@ export function auditText(s: AuditSnapshot, symbol: string, reflection = '', clo
     lines.push('');
   }
   lines.push('Saved & invested', `  Moved to savings      ${m(st.movedToSavings, true)}`, `  Moved to investments  ${m(st.movedToInvestments, true)}`, `  Investment gain/loss  ${m(st.investmentGainLoss, true)}`, `  Dreams funded         ${m(s.dreamsFunded, true)}`, '');
+  for (const w of s.wallets ?? []) {
+    lines.push(`${w.name} (e-wallet)`, `  Opening  ${m(w.opening)}`, `  In       ${m(w.totalIn, true)}`, `  Out      ${m(-w.totalOut, true)}`, `  Closing  ${m(w.closing)}`);
+    if (w.fees) lines.push(`  Fees     ${m(w.fees)}`);
+    if (w.topMerchants.length) lines.push(`  Top: ${w.topMerchants.slice(0, 3).map((x) => `${x.name} ${m(x.amount)}`).join(', ')}`);
+    lines.push('');
+  }
   lines.push('Debts', `  Borrowed ${m(st.borrowed)} · Lent ${m(st.lent)} · Repaid ${m(st.repaid)} · Collected ${m(st.collected)}`, `  Outstanding: I owe ${m(s.debtsOutstanding.iOwe)}, owed to me ${m(s.debtsOutstanding.owedToMe)}`, '');
   lines.push('Net worth walk', `  Start        ${m(st.netWorthStart)}`, `  Income       ${m(st.income, true)}`, `  Spending     ${m(-st.expenses, true)}`);
   if (st.investmentGainLoss) lines.push(`  Investments  ${m(st.investmentGainLoss, true)}`);
