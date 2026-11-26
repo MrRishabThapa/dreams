@@ -32,7 +32,10 @@ export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: ()
   const [target, setTarget] = useState(settings?.monthly_savings_target_minor ? formatMoney(settings.monthly_savings_target_minor, { bare: true }).replace(/,/g, '') : '');
   const [persisted, setPersisted] = useState<boolean | null>(null);
   const lastBackup = useLiveQuery(() => getMeta<string | null>('lastBackupAt', null), []);
-  const lockOn = useLiveQuery(async () => !!(await getMeta('appLock', null)), []);
+  const lockOn = useLiveQuery(async () => {
+    const l = await getMeta<{ faceId?: unknown } | null>('appLock', null);
+    return l ? (l.faceId ? 'face' : 'pin') : null;
+  }, []);
 
   useEffect(() => {
     navigator.storage?.persisted?.().then(setPersisted).catch(() => setPersisted(null));
@@ -101,8 +104,8 @@ export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: ()
         </Row>
       </Group>
 
-      <Group header="Privacy" className="mt-6">
-        <Row icon={ic(<Lock size={20} />)} title="App Lock" value={lockOn ? 'On' : 'Off'} chevron onPress={() => openSheet({ kind: 'appLock' })} />
+      <Group header="Security" className="mt-6" footer="A screen lock: it hides Dreams from others, it doesn’t encrypt this iPhone’s data.">
+        <Row icon={ic(<Lock size={20} />)} title="App Lock" value={lockOn ? (lockOn === 'face' ? 'Face ID' : 'PIN') : 'Off'} chevron onPress={() => openSheet({ kind: 'appLock' })} />
       </Group>
 
       <Group header="Money" className="mt-6" footer="Amounts use lakh/crore grouping, e.g. Rs 1,20,000.">
