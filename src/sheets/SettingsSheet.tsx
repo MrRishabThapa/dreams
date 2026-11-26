@@ -18,6 +18,7 @@ import { backupNudge, exportBackupFile, shareOrDownload, transactionsCSV } from 
 import { formatMoney, parseMoney } from '../domain/money';
 import { today } from '../domain/dates';
 import { Logo } from '../ui/Logo';
+import { displayName, NAME_MAX } from '../domain/greeting';
 
 const ic = (el: React.ReactNode) => <span className="flex h-[30px] w-[30px] items-center justify-center text-accent">{el}</span>;
 
@@ -28,6 +29,7 @@ export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: ()
   const ask = useActionSheet();
   const restore = useRestore({ confirmReplace: true, onDone: onClose });
   const sync = useSync();
+  const [name, setName] = useState(settings?.display_name ?? '');
   const [symbol, setSymbol] = useState(settings?.symbol ?? 'Rs');
   const [target, setTarget] = useState(settings?.monthly_savings_target_minor ? formatMoney(settings.monthly_savings_target_minor, { bare: true }).replace(/,/g, '') : '');
   const [persisted, setPersisted] = useState<boolean | null>(null);
@@ -48,6 +50,11 @@ export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: ()
   const nudge = sync.signedIn ? null : backupNudge(lastBackup ?? null, hasData);
   const lastLabel = lastBackup ? new Date(lastBackup).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Never';
 
+  const saveName = () => {
+    const n = displayName(name);
+    setName(n ?? '');
+    if (n !== (displayName(settings.display_name) ?? null)) void patch('user_settings', settings.id, { display_name: n });
+  };
   const saveSymbol = () => {
     const s = symbol.trim().slice(0, 6) || 'Rs';
     if (s !== settings.symbol) void patch('user_settings', settings.id, { symbol: s });
@@ -87,7 +94,27 @@ export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: ()
   return (
     <Sheet open={open} onClose={onClose} z={z} title="Settings" label="Settings" right={<NavButton bold onClick={onClose}>Done</NavButton>}>
       {restore.input}
-      <Group header="Appearance" className="mt-2">
+      <Group header="Profile" className="mt-2" footer="Used to greet you on Home. It syncs with your other devices.">
+        <label className="row sep flex min-h-[44px] items-center bg-surface pl-4">
+          <span className="row-body flex flex-1 items-center gap-3 pr-4">
+            <span className="shrink-0 text-body">Your name</span>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={saveName}
+              onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+              maxLength={NAME_MAX}
+              placeholder="Optional"
+              autoComplete="given-name"
+              enterKeyHint="done"
+              aria-label="Your name"
+              className="h-11 min-w-0 flex-1 bg-transparent text-right text-[17px] text-label-2 outline-none placeholder:text-label-3"
+            />
+          </span>
+        </label>
+      </Group>
+
+      <Group header="Appearance" className="mt-6">
         <div className="sep px-4 py-3">
           <Segmented
             value={settings.theme}
