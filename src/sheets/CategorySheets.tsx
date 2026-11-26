@@ -43,7 +43,7 @@ export function CategoriesSheet({ open, onClose, z }: { open: boolean; onClose: 
       <div className="px-4 pb-5 pt-1">
         <Segmented value={type} onChange={setType} options={[{ value: 'expense', label: 'Expense' }, { value: 'income', label: 'Income' }]} />
       </div>
-      <Group footer="Tap to edit. Swipe left to delete; past transactions keep their category. The first ones appear first in the Add sheet until you build up recent picks.">
+      <Group footer="Tap to edit. Swipe left to delete; past transactions keep their category. The first ones appear first in the Add sheet until you build up recent picks; the rest are under More.">
         {list.map((c, i) => (
           <SwipeRow key={c.id} onDelete={() => void del(c)} onEdit={() => openSheet({ kind: 'category', category: c, type })}>
             <div className="row sep flex min-h-[44px] items-center bg-surface">
@@ -70,7 +70,7 @@ export function CategoriesSheet({ open, onClose, z }: { open: boolean; onClose: 
   );
 }
 
-export function CategorySheet({ open, onClose, category, type, z }: { open: boolean; onClose: () => void; category?: Category; type: CategoryType; z: number }) {
+export function CategorySheet({ open, onClose, category, type, z, onSaved }: { open: boolean; onClose: () => void; category?: Category; type: CategoryType; z: number; onSaved?: (c: Category) => void }) {
   const data = useData();
   const toast = useToast();
   const confirm = useConfirm();
@@ -84,7 +84,10 @@ export function CategorySheet({ open, onClose, category, type, z }: { open: bool
   const saveIt = async () => {
     if (!valid) return;
     if (category) await patch('categories', category.id, { name: name.trim(), icon, color });
-    else await save('categories', { name: name.trim(), type, icon, color, sort: siblings.length } as Partial<Category>);
+    else {
+      const sort = siblings.reduce((m, c) => Math.max(m, c.sort + 1), 0);
+      onSaved?.((await save('categories', { name: name.trim(), type, icon, color, sort } as Partial<Category>)) as Category);
+    }
     toast({ message: category ? 'Category saved' : `${name.trim()} added` });
     onClose();
   };
@@ -106,7 +109,7 @@ export function CategorySheet({ open, onClose, category, type, z }: { open: bool
         </label>
       </Group>
       <Group header="Color" className="mt-6">
-        <div className="grid grid-cols-6 gap-2 p-3" role="radiogroup" aria-label="Color">
+        <div className="grid grid-cols-7 gap-2 p-3" role="radiogroup" aria-label="Color">
           {COLORS.map((c) => (
             <button key={c} type="button" role="radio" aria-checked={color === c} aria-label={c} onClick={() => setColor(c)}
               className={`mx-auto h-10 w-10 rounded-full ${color === c ? 'ring-2 ring-accent ring-offset-2 ring-offset-[var(--surface)]' : ''}`} style={{ background: c }} />
