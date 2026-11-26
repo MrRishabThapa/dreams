@@ -115,37 +115,36 @@ export function ProfitChart({ series, symbol, sinceLabel }: { series: ProfitSeri
         aria-label={`Profit ${sinceLabel}: ${formatMoney(series.profit, { symbol, signed: true })}`}
         data-testid="profit-chart"
       >
-        <svg width={w} height={H} className="block overflow-visible" aria-hidden>
-          <defs>
-            <linearGradient id={`g-${uid}`} gradientUnits="userSpaceOnUse" x1="0" y1={PAD_TOP} x2="0" y2={geo.y0}>
-              <stop offset="0" stopColor="var(--gain)" stopOpacity="0.32" />
-              <stop offset="1" stopColor="var(--gain)" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id={`r-${uid}`} gradientUnits="userSpaceOnUse" x1="0" y1={H - PAD_BOTTOM} x2="0" y2={geo.y0}>
-              <stop offset="0" stopColor="var(--loss)" stopOpacity="0.30" />
-              <stop offset="1" stopColor="var(--loss)" stopOpacity="0" />
-            </linearGradient>
-            <clipPath id={`c-${uid}`}>
-              <motion.rect
-                key={`${series.range}-${pts.length}`}
-                x={0}
-                y={-4}
-                height={H + 8}
-                initial={{ width: reduce ? w : 0 }}
-                animate={{ width: w }}
-                transition={{ duration: reduce ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] }}
-              />
-            </clipPath>
-          </defs>
-          <line x1={0} x2={w} y1={geo.y0} y2={geo.y0} stroke="var(--label-3)" strokeWidth={1} strokeDasharray="3 4" />
-          <g clipPath={`url(#c-${uid})`}>
+        {/* draw-in: a CSS clip-path reveal on a wrapper (WebKit doesn't repaint animated SVG <clipPath> contents) */}
+        <motion.div
+          key={`${series.range}-${pts.length}`}
+          className="absolute inset-0"
+          initial={{ clipPath: reduce ? 'inset(-8px 0% -8px 0)' : 'inset(-8px 100% -8px 0)' }}
+          animate={{ clipPath: 'inset(-8px 0% -8px 0)' }}
+          transition={{ duration: reduce ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <svg width={w} height={H} className="block overflow-visible" aria-hidden>
+            <defs>
+              <linearGradient id={`g-${uid}`} gradientUnits="userSpaceOnUse" x1="0" y1={PAD_TOP} x2="0" y2={geo.y0}>
+                <stop offset="0" stopColor="var(--gain)" stopOpacity="0.32" />
+                <stop offset="1" stopColor="var(--gain)" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id={`r-${uid}`} gradientUnits="userSpaceOnUse" x1="0" y1={H - PAD_BOTTOM} x2="0" y2={geo.y0}>
+                <stop offset="0" stopColor="var(--loss)" stopOpacity="0.30" />
+                <stop offset="1" stopColor="var(--loss)" stopOpacity="0" />
+              </linearGradient>
+            </defs>
             {geo.parts.map((p, i) => (
               <path key={`a${i}`} d={p.area} fill={`url(#${p.sign > 0 ? 'g' : 'r'}-${uid})`} />
             ))}
             {geo.parts.map((p, i) => (
               <path key={`l${i}`} d={p.line} fill="none" stroke={p.sign > 0 ? 'var(--gain)' : 'var(--loss)'} strokeWidth={2.25} strokeLinejoin="round" strokeLinecap="round" />
             ))}
-          </g>
+          </svg>
+        </motion.div>
+        {/* zero line and the scrub cursor sit on top, outside the reveal */}
+        <svg width={w} height={H} className="pointer-events-none absolute inset-0 block overflow-visible" aria-hidden>
+          <line x1={0} x2={w} y1={geo.y0} y2={geo.y0} stroke="var(--label-3)" strokeWidth={1} strokeDasharray="3 4" />
           {cx !== null && (
             <g>
               <line x1={cx} x2={cx} y1={0} y2={H} stroke="var(--label-2)" strokeWidth={1} />
