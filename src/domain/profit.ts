@@ -2,15 +2,18 @@ import type { ISODate, Ledger, Minor } from './types';
 import { addDays } from './dates';
 import { isFlow, netWorth } from './ledger';
 
+
 /**
  * "Profit vs day" for the Home graph.
  *
- * profit(d) = netWorth(end of d) − netWorth(day before the range starts).
+ * profit(d) = Σ income − Σ expenses + Σ investment gain/loss, from the range start to d.
  *
- * It is the same net-worth change the monthly audit reports (income − expenses +
- * investment gain/loss + corrections + other), so for any whole month the graph's last
- * point equals that month's `netWorthChange`. Transfers between your own accounts change
- * nothing, and a borrowed or lent amount with cash nets to zero (cash and debt move together).
+ * Same rules as the monthly audit's Income / Spent / Saved and its investment gain/loss:
+ * transfers, balance corrections (adjust on a non-investment account, e.g. an eSewa
+ * "Update balance"), debt-linked transactions, opening balances, deleted rows and rows on
+ * deleted accounts are all left out. So for a calendar month the graph's total equals that
+ * month's Saved + investment gain/loss (= Saved when there were no investment updates).
+ * Days are the transaction's own local date (occurred_on); no time zones involved.
  */
 
 export type ProfitRange = '1W' | '1M' | '3M' | '1Y' | 'All';
@@ -19,9 +22,9 @@ const RANGE_DAYS: Record<Exclude<ProfitRange, 'All'>, number> = { '1W': 7, '1M':
 
 export interface ProfitPoint {
   date: ISODate;
-  /** cumulative net-worth change since the range baseline */
+  /** income − spending + investment gain/loss since the range start, cumulative */
   profit: Minor;
-  /** that day's income and spending (as in the audit: no transfers, adjustments or debt moves) */
+  /** that day's income and spending (as in the audit: no transfers, corrections or debt moves) */
   income: Minor;
   expense: Minor;
 }
@@ -56,54 +59,18 @@ export function dailyIndex(l: Ledger): DailyIndex {
   const income = new Map<ISODate, Minor>();
   const expense = new Map<ISODate, Minor>();
   let first: ISODate | null = null;
-  const seen = (d: ISODate) => {
-    if (!first || d < first) first = d;
-  };
-  // same account set as balances(): deleted accounts don't count
-  const live = new Set(l.accounts.filter((a) => !a.deleted_at).map((a) => a.id));
+  const kind = new Map(l.accounts.filter((a) => !a.deleted_at).map((a) => [a.id, a.kind] as const));
 
   for (const t of l.transactions) {
-    if (t.deleted_at) continue;
+    if (t.deleted_at || !kind.has(t.account_id)) continue;
     const d = t.occurred_on;
-    let v = 0;
-    if (t.type === 'transfer') {
-      if (live.has(t.account_id)) v -= t.amount_minor;
-      if (t.to_account_id && live.has(t.to_account_id)) v += t.amount_minor;
-    } else if (live.has(t.account_id)) {
-      v = t.type === 'expense' ? -t.amount_minor : t.amount_minor;
-    }
-    add(delta, d, v);
-    if (isFlow(t) && live.has(t.account_id)) add(t.type === 'income' ? income : expense, d, t.amount_minor);
-    seen(d);
-  }
-
-  // debts: remaining = max(0, amount − payments so far) from the day opened; payments are
-  // folded in day by day so the floor at 0 matches debtRemaining exactly
-  const pays = new Map<string, Map<ISODate, Minor>>();
-  for (const t of l.transactions) {
-    if (t.deleted_at || !t.debt_id || t.debt_event !== 'pay') continue;
-    const m = pays.get(t.debt_id) ?? new Map<ISODate, Minor>();
-    m.set(t.occurred_on, (m.get(t.occurred_on) ?? 0) + t.amount_minor);
-    pays.set(t.debt_id, m);
-  }
-  for (const debt of l.debts) {
-    if (debt.deleted_at) continue;
-    const sign = debt.direction === 'owed' ? 1 : -1;
-    const byDay = pays.get(debt.id) ?? new Map<ISODate, Minor>();
-    // payments dated before the debt opened count on the day it opened
-    let early = 0;
-    const later: [ISODate, Minor][] = [];
-    for (const [d, v] of byDay) (d <= debt.opened_on ? (early += v) : later.push([d, v]));
-    later.sort((a, b) => a[0].localeCompare(b[0]));
-    let remaining = Math.max(0, debt.amount_minor - early);
-    add(delta, debt.opened_on, sign * remaining);
-    seen(debt.opened_on);
-    let paid = early;
-    for (const [d, v] of later) {
-      paid += v;
-      const next = Math.max(0, debt.amount_minor - paid);
-      add(delta, d, sign * (next - remaining));
-      remaining = next;
+    if (!first || d < first) first = d;
+    if (isFlow(t)) {
+      const v = t.type === 'income' ? t.amount_minor : -t.amount_minor;
+      add(delta, d, v);
+      add(t.type === 'income' ? income : expense, d, t.amount_minor);
+    } else if (t.type === 'adjust' && !t.debt_id && kind.get(t.account_id) === 'investment') {
+      add(delta, d, t.amount_minor); // an investment's value went up or down
     }
   }
   return { delta, income, expense, first };
