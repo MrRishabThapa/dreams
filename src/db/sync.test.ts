@@ -6,7 +6,8 @@ import { addDreamMoney, createAccount, createDebt, createDream, ensureSettings, 
 import { restoreBackup, buildBackup } from './backup';
 import { demoYear } from '../../scripts/demo-year.mjs';
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+// v4 from crypto.randomUUID(); v5-shaped stable ids for default categories
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[45][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const sql = readFileSync(new URL('../../supabase/schema.sql', import.meta.url), 'utf8');
 
 /** Column names per table, parsed from supabase/schema.sql. */
