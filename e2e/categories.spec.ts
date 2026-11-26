@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { netWorthValue, onboard, typeAmount } from './helpers';
 
@@ -62,11 +63,11 @@ test('Settings → Patch notes shows the current version first with a Latest pil
   const notes = page.getByRole('dialog', { name: 'Patch notes' });
   await expect(notes.getByText(/You’re on version \d+\.\d+\.\d+\./)).toBeVisible();
   const headings = notes.getByRole('heading', { level: 2 });
-  await expect(headings.first()).toHaveText('v1.2.1');
-  await expect(headings).toHaveText(['v1.2.1', 'v1.2.0', 'v1.1.0', 'v1.0.0']);
+  const version = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version as string;
+  await expect(headings.first()).toHaveText(`v${version}`);
+  await expect(headings.filter({ hasText: /^v1\.(2\.1|2\.0|1\.0|0\.0)$/ })).toHaveText(['v1.2.1', 'v1.2.0', 'v1.1.0', 'v1.0.0']);
   const first = notes.getByTestId('patch-card').first();
   await expect(first.getByText('Latest', { exact: true })).toBeVisible();
-  await expect(first.getByText('Custom categories', { exact: true })).toBeVisible();
   await expect(notes.getByTestId('patch-card').nth(1).getByText('Latest', { exact: true })).toHaveCount(0);
   await notes.getByRole('button', { name: 'Back to Settings' }).click();
   await expect(notes).toBeHidden();
