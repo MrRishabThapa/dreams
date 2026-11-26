@@ -25,9 +25,9 @@ test('app lock: set PIN, privacy cover in background, lock on return, wrong/righ
   await page.getByRole('button', { name: /^App Lock/ }).click();
   const sheet = page.getByRole('dialog', { name: 'App Lock' });
   await sheet.getByRole('button', { name: 'Turn On App Lock' }).click();
-  await pin(page, '1357');
+  await pin(page, '135790');
   await expect(sheet.getByText('Enter it again')).toBeVisible();
-  await pin(page, '1357');
+  await pin(page, '135790');
   await expect(page.getByText('App Lock is on')).toBeVisible();
   await sheet.getByRole('button', { name: 'Immediately' }).click();
   await sheet.getByRole('button', { name: 'Done' }).click();
@@ -40,23 +40,23 @@ test('app lock: set PIN, privacy cover in background, lock on return, wrong/righ
   const lock = page.getByRole('dialog', { name: 'Dreams is locked' });
   await expect(lock).toBeVisible();
   await expect(page.getByTestId('net-worth')).toHaveCount(0); // app not rendered while locked
-  await pin(page, '0000');
+  await pin(page, '000000');
   await expect(lock.getByText('Wrong PIN. 4 tries left.')).toBeVisible();
-  await pin(page, '1357');
+  await pin(page, '135790');
   await expect(lock).toBeHidden();
   await expect(page.getByTestId('net-worth')).toBeVisible();
 
   // relaunch → locked (offline)
   await page.reload();
   await expect(lock).toBeVisible();
-  await pin(page, '1357');
+  await pin(page, '135790');
   await expect(page.getByTestId('net-worth')).toBeVisible();
 
   // turning it off needs the PIN
   await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByRole('button', { name: /^App Lock/ }).click();
   await sheet.getByRole('switch', { name: 'App Lock' }).click();
-  await pin(page, '1357');
+  await pin(page, '135790');
   await expect(page.getByText('App Lock is off')).toBeVisible();
   await page.reload();
   await expect(page.getByTestId('net-worth')).toBeVisible();
