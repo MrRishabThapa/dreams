@@ -1,5 +1,6 @@
 import { ChartPie, ChevronLeft, ChevronRight, Eye, EyeOff, Settings, WifiOff } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Page } from '../ui/Page';
 import { IconButton, Button } from '../ui/Button';
 import { Money } from '../ui/Money';
@@ -15,10 +16,25 @@ import { monthStats, netWorthSeries } from '../domain/ledger';
 import { monthReadyToClose } from '../domain/audit';
 import { addMonths, monthLabel, monthName, monthOf, today } from '../domain/dates';
 import { formatMoney } from '../domain/money';
+import { displayName, greetingFor, NAME_MAX } from '../domain/greeting';
+import { getMeta, patch, setMeta } from '../db/repo';
 
-function greeting() {
-  const h = new Date().getHours();
-  return h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+/** Greeting for the current local hour; refreshes every minute and when the app comes back. */
+function useGreeting(): string {
+  const [hour, setHour] = useState(() => new Date().getHours());
+  useEffect(() => {
+    const tick = () => setHour(new Date().getHours());
+    const vis = () => document.visibilityState === 'visible' && tick();
+    const t = window.setInterval(tick, 60_000);
+    document.addEventListener('visibilitychange', vis);
+    window.addEventListener('pageshow', tick);
+    return () => {
+      window.clearInterval(t);
+      document.removeEventListener('visibilitychange', vis);
+      window.removeEventListener('pageshow', tick);
+    };
+  }, []);
+  return greetingFor(hour);
 }
 
 export function useOnline() {
@@ -39,6 +55,9 @@ export function useOnline() {
 export function Home() {
   const data = useData();
   const { hide, setHide, openSheet, settings } = useApp();
+  const greeting = useGreeting();
+  const name = displayName(settings?.display_name);
+  const promptDone = useLiveQuery(() => getMeta<boolean>('namePromptDone', false), []);
   const online = useOnline();
   const sync = useSync();
   const nw = useNetWorth(data);
@@ -65,7 +84,17 @@ export function Home() {
 
   return (
     <Page
-      title={greeting()}
+      title={greeting}
+      heading={
+        name ? (
+          <span className="block min-w-0" data-testid="greeting">
+            <span className="block text-title3 font-semibold text-label-2">{greeting},</span>
+            <span className="block truncate">{name}</span>
+          </span>
+        ) : (
+          <span data-testid="greeting">{greeting}</span>
+        )
+      }
       right={
         <>
           <IconButton label={hide ? 'Show balances' : 'Hide balances'} onClick={() => setHide(!hide)}>
@@ -86,6 +115,8 @@ export function Home() {
         ) : null
       }
     >
+      {settings && !name && promptDone === false && <NamePrompt settingsId={settings.id} />}
+
       {ready && (
         <button
           type="button"
@@ -191,6 +222,40 @@ export function Home() {
         />
       )}
     </Page>
+  );
+}
+
+/** Asked once: a name for the greeting. "Not now" never asks again; Settings → Profile can set it any time. */
+function NamePrompt({ settingsId }: { settingsId: string }) {
+  const [value, setValue] = useState('');
+  const n = displayName(value);
+  const done = () => void setMeta('namePromptDone', true);
+  return (
+    <section className="card mx-4 mb-4 p-4" aria-label="Your name">
+      <label htmlFor="name-prompt" className="block text-headline">What should Dreams call you?</label>
+      <p className="mt-0.5 text-footnote text-label-2">For the greeting up top. You can change it in Settings.</p>
+      <form
+        className="mt-3 flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!n) return;
+          void patch('user_settings', settingsId, { display_name: n }).then(done);
+        }}
+      >
+        <input
+          id="name-prompt"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          maxLength={NAME_MAX}
+          placeholder="Your name"
+          autoComplete="given-name"
+          enterKeyHint="done"
+          className="h-11 min-w-0 flex-1 rounded-ctl bg-fill px-3 text-[17px] outline-none placeholder:text-label-3"
+        />
+        <Button size="md" type="submit" disabled={!n}>Save</Button>
+      </form>
+      <button type="button" onClick={done} className="mt-1 min-h-[44px] text-subhead text-label-2">Not now</button>
+    </section>
   );
 }
 
