@@ -51,8 +51,9 @@ export function ActionSheetProvider({ children }: { children: ReactNode }) {
       {children}
       {createPortal(
         <AnimatePresence>
+          {/* z-450: above the lock screen (z-400), so "Forgot PIN?" choices can be tapped; below the privacy cover */}
           {req && (
-            <div className="fixed inset-0 z-[150]" role="alertdialog" aria-modal="true" aria-label={req.title ?? req.message ?? 'Choose'}>
+            <div className="fixed inset-0 z-[450]" role="alertdialog" aria-modal="true" aria-label={req.title ?? req.message ?? 'Choose'}>
               <motion.div className="absolute inset-0" style={{ background: 'var(--dim)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => done(null)} />
               <motion.div
                 className="absolute inset-x-2 bottom-0 flex flex-col gap-2"
