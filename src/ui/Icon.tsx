@@ -3,6 +3,7 @@ import {
   GraduationCap, Users, Clapperboard, CircleEllipsis, Briefcase, Store, Gift, Percent, ArrowLeftRight, SlidersHorizontal,
   Wallet, Plane, Car, Laptop, Heart, Bike, Camera, Gem, TreePalm, Shield, Baby, Music, Star, Coffee, Fuel, Wifi, Dumbbell,
   Shirt, PawPrint, Plug, Pill, BookOpen, Gamepad2, Ticket, Wrench, Coins, Building2, HandHeart,
+  Watch, ShoppingCart, Sparkles, Repeat, Palette, Umbrella, BadgePercent, Headphones, Scissors, Hammer,
   type LucideIcon, type LucideProps,
 } from 'lucide-react';
 
@@ -15,14 +16,17 @@ const MAP: Record<string, LucideIcon> = {
   'tree-palm': TreePalm, shield: Shield, baby: Baby, music: Music, star: Star, coffee: Coffee, fuel: Fuel, wifi: Wifi,
   dumbbell: Dumbbell, shirt: Shirt, 'paw-print': PawPrint, plug: Plug, pill: Pill, 'book-open': BookOpen,
   gamepad: Gamepad2, ticket: Ticket, wrench: Wrench, coins: Coins, building: Building2, 'hand-heart': HandHeart,
+  watch: Watch, 'shopping-cart': ShoppingCart, sparkles: Sparkles, repeat: Repeat, palette: Palette, umbrella: Umbrella,
+  'badge-percent': BadgePercent, headphones: Headphones, scissors: Scissors, hammer: Hammer,
 };
 
 /** Icons offered in the category editor. */
 export const CATEGORY_ICONS = [
-  'utensils', 'coffee', 'bus', 'fuel', 'car', 'receipt', 'plug', 'wifi', 'house', 'shopping-bag', 'shirt', 'heart-pulse',
-  'pill', 'dumbbell', 'graduation-cap', 'book-open', 'users', 'baby', 'paw-print', 'clapperboard', 'gamepad', 'ticket',
-  'music', 'plane', 'gift', 'hand-heart', 'wrench', 'smartphone', 'briefcase', 'store', 'percent', 'coins', 'building',
-  'circle-ellipsis',
+  'utensils', 'coffee', 'shopping-cart', 'bus', 'fuel', 'car', 'bike', 'plane', 'receipt', 'plug', 'wifi', 'house',
+  'shopping-bag', 'shirt', 'watch', 'gem', 'sparkles', 'scissors', 'heart-pulse', 'pill', 'dumbbell', 'graduation-cap',
+  'book-open', 'users', 'baby', 'paw-print', 'clapperboard', 'gamepad', 'ticket', 'music', 'headphones', 'palette',
+  'camera', 'laptop', 'smartphone', 'repeat', 'gift', 'hand-heart', 'wrench', 'hammer', 'umbrella', 'shield',
+  'badge-percent', 'landmark', 'building', 'briefcase', 'store', 'coins', 'circle-ellipsis',
 ];
 
 export function Icon({ name, ...p }: { name: string | null | undefined } & Omit<LucideProps, 'name'>) {
