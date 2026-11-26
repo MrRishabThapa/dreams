@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.2.2 (2026-11-26)
+
+**Profit graph**
+- The main Home card switches between **Balance** and **Graph** (remembered on the device).
+- Graph: profit or loss day by day for **1W · 1M · 3M · 1Y · All**. Profit is the change in net worth since the day
+  before the range starts, the same figure as the monthly audit's net-worth change, so a whole month on the graph
+  always equals that month in the audit. Own-account transfers change nothing; a debt opened with cash nets to zero.
+  Quiet days carry the previous value. A range starts at the first recorded day if that's later.
+- Stock-style: green above the dashed zero line, red below, split exactly where the line crosses zero, with a fading
+  area fill. Headline with ▲/▼, +/− and the % change (en-IN grouping). Drag across to scrub: cursor, dot, and a
+  tooltip with the date, profit and that day's income and spending; let go to return to today. Vertical swipes
+  still scroll. Draw-in animation (none with Reduce Motion). Needs two days of data; until then a short note.
+- One pass over the ledger per data change, then cheap per range.
+
+**Personal greeting**
+- "Good morning / afternoon / evening / night" by local hour (night is 21:00–05:00), with your name on its own line
+  (long names truncate). Updates on resume.
+- Settings → **Profile → Your name** (synced, `user_settings.display_name`). Home asks once if it's empty;
+  "Not now" doesn't ask again.
+- **Supabase:** run `supabase/migrations/20261126_user_settings_display_name.sql` before setting a name on a synced device.
+
+**Frosted cards**
+- The main Home card is frosted glass: translucent, blurred, inner highlight, violet-tinted shadow, a soft sheen
+  behind it and a faint grain. Solid with Reduce Transparency or without `backdrop-filter`. Home's top bar is
+  now solid instead of blurred, so the page keeps to two blurred surfaces (this card and the tab bar).
+
 ## v1.2.1 (2026-11-26)
 
 **Categories**
