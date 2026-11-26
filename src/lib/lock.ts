@@ -11,6 +11,8 @@ export interface LockConfig {
   length: number;
   /** lock after the app has been in the background this long (ms); 0 = immediately */
   autoLockMs: number;
+  /** Face ID (WebAuthn platform credential) id, when turned on. Only the id: no secret. */
+  faceId?: { credId: string } | null;
 }
 
 const KEY = 'appLock';
@@ -46,6 +48,8 @@ export async function setPin(pin: string, autoLockMs?: number): Promise<void> {
     iterations: ITERATIONS,
     length: pin.length,
     autoLockMs: autoLockMs ?? prev?.autoLockMs ?? 60_000,
+    // changing or resetting the PIN keeps Face ID: the PIN is its fallback, not its key
+    faceId: prev?.faceId ?? null,
   } satisfies LockConfig);
   await setMeta(FAILS, { count: 0, until: 0 });
 }
@@ -53,6 +57,18 @@ export async function setPin(pin: string, autoLockMs?: number): Promise<void> {
 export async function setAutoLock(ms: number): Promise<void> {
   const l = await getLock();
   if (l) await setMeta(KEY, { ...l, autoLockMs: ms });
+}
+
+/** Turns Face ID unlock on (with a registered credential id) or off. Needs a PIN first. */
+export async function setFaceId(credId: string | null): Promise<void> {
+  const l = await getLock();
+  if (!l) throw new Error('Set a PIN first');
+  await setMeta(KEY, { ...l, faceId: credId ? { credId } : null });
+}
+
+/** Clears the failed-tries counter, e.g. after unlocking with Face ID. */
+export async function clearFails(): Promise<void> {
+  await setMeta(FAILS, { count: 0, until: 0 });
 }
 
 export async function disableLock(): Promise<void> {
