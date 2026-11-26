@@ -1,4 +1,5 @@
-import { Archive, ArrowLeftRight, Check, Plus, SlidersHorizontal, Trash2, TrendingUp } from 'lucide-react';
+import { Archive, ArrowLeftRight, Check, FileDown, Plus, RefreshCw, SlidersHorizontal, Trash2, TrendingUp } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { Sheet } from '../ui/Sheet';
 import { NavButton, Button } from '../ui/Button';
@@ -14,7 +15,10 @@ import { liveAccounts, liveTxs, useBalances, useData } from '../db/hooks';
 import { correctBalance, createAccount, deleteAccount, patch, undoDeleteAccount } from '../db/repo';
 import { KIND_META, KIND_ORDER } from '../lib/catalog';
 import { formatMoney, parseMoney } from '../domain/money';
-import { today } from '../domain/dates';
+import { monthOf, today } from '../domain/dates';
+import { getConfirmed, reconcile } from '../db/imports';
+import { confirmNudge, lastConfirmed, walletMonth } from '../domain/wallet';
+import { WalletCard } from '../ui/WalletCard';
 import type { Account, AccountKind } from '../domain/types';
 
 /* ---------------- pick account ---------------- */
@@ -130,12 +134,19 @@ export function CorrectSheet({ open, onClose, account, z }: { open: boolean; onC
   const current = bal.get(account.id) ?? 0;
   const [val, setVal] = useState('');
   const [note, setNote] = useState('');
-  const target = parseMoney(val);
-  const diff = target === null ? 0 : target - current;
   const inv = account.kind === 'investment';
+  const wallet = account.kind === 'wallet';
+  // for an e-wallet, an empty field means "it matches": confirming without a change
+  const target = wallet && val.trim() === '' ? current : parseMoney(val);
+  const diff = target === null ? 0 : target - current;
 
   const save = async () => {
     if (target === null) return;
+    if (wallet) {
+      const r = await reconcile(account.id, current, target, today(), note.trim() || 'Balance checked');
+      toast({ message: r.tx ? `Balance updated (${formatMoney(diff, { symbol, signed: true })})` : 'Balance confirmed' });
+      return onClose();
+    }
     const t = await correctBalance(account.id, current, target, today(), note);
     toast({ message: t ? `${inv ? 'Value updated' : 'Balance corrected'} (${formatMoney(diff, { symbol, signed: true })})` : 'No change' });
     onClose();
@@ -147,28 +158,28 @@ export function CorrectSheet({ open, onClose, account, z }: { open: boolean; onC
       onClose={onClose}
       z={z}
       detents={['medium', 'large']}
-      title={inv ? 'Update Value' : 'Correct Balance'}
-      label={inv ? 'Update value' : 'Correct balance'}
+      title={inv ? 'Update Value' : wallet ? 'Update Balance' : 'Correct Balance'}
+      label={inv ? 'Update value' : wallet ? 'Update balance' : 'Correct balance'}
       left={<NavButton onClick={onClose}>Cancel</NavButton>}
-      right={<NavButton bold disabled={target === null} onClick={save}>Save</NavButton>}
+      right={<NavButton bold disabled={target === null} onClick={save}>{wallet && diff === 0 ? 'Confirm' : 'Save'}</NavButton>}
     >
-      <Group footer={inv ? 'The difference is recorded as investment gain or loss.' : 'The difference is recorded as a correction, not as income or spending.'}>
+      <Group footer={inv ? 'The difference is recorded as investment gain or loss.' : wallet ? `Open the ${account.name} app and type the balance it shows. Leave it empty if it matches. The difference is recorded as a correction, not as income or spending.` : 'The difference is recorded as a correction, not as income or spending.'}>
         <Row title="Dreams thinks" value={<Money value={current} />} />
         <label className="row sep flex min-h-[44px] items-center bg-surface pl-4">
           <span className="row-body flex flex-1 items-center gap-3 pr-4">
-            <span className="text-body">{inv ? 'Current value' : 'Actual balance'}</span>
+            <span className="text-body">{inv ? 'Current value' : wallet ? 'Balance in the app' : 'Actual balance'}</span>
             <input
               autoFocus
               inputMode="decimal"
               value={val}
               onChange={(e) => setVal(e.target.value)}
               placeholder={formatMoney(current, { bare: true })}
-              aria-label={inv ? 'Current value' : 'Actual balance'}
+              aria-label={inv ? 'Current value' : wallet ? 'Balance in the app' : 'Actual balance'}
               className="money h-11 min-w-0 flex-1 bg-transparent text-right text-[17px] outline-none placeholder:text-label-3"
             />
           </span>
         </label>
-        {target !== null && <Row title="Difference" value={<Money value={diff} signed tone="auto" />} />}
+        {target !== null && (!wallet || val.trim() !== '') && <Row title="Difference" value={<Money value={diff} signed tone="auto" />} />}
       </Group>
       <Group className="mt-6">
         <label className="row sep flex min-h-[44px] items-center bg-surface pl-4">
@@ -194,9 +205,17 @@ export function AccountDetailSheet({ open, onClose, id, z }: { open: boolean; on
   const debts = useMemo(() => new Map((data?.debts ?? []).map((d) => [d.id, d])), [data]);
   const txs = liveTxs(data).filter((t) => t.account_id === id || t.to_account_id === id);
   const balance = bal.get(id) ?? 0;
+  const confirmed = useLiveQuery(() => getConfirmed(), []);
+  const now = today();
+  const wm = useMemo(
+    () => (data && account?.kind === 'wallet' ? walletMonth(data, account, monthOf(now), data.categories) : null),
+    [data, account, now],
+  );
 
   if (!account) return <Sheet open={open} onClose={onClose} z={z}>{null}</Sheet>;
   const inv = account.kind === 'investment';
+  const wallet = account.kind === 'wallet';
+  const nudge = wallet ? confirmNudge(lastConfirmed(account.id, data?.transactions ?? [], confirmed?.[account.id] ?? null), now) : null;
 
   const more = async () => {
     const choice = await ask({
@@ -231,12 +250,23 @@ export function AccountDetailSheet({ open, onClose, id, z }: { open: boolean; on
         <IconTile name={account.icon} color={account.color} size={52} />
         <div className="mt-2 text-subhead text-label-2">{KIND_META[account.kind].label}{account.archived ? ' · Archived' : ''}</div>
         <Money value={balance} animated className="rounded-num mt-1 text-[40px] font-bold leading-[48px]" />
+        {nudge && (
+          <button type="button" onClick={() => openSheet({ kind: 'correct', account })} className={`mt-1 min-h-[32px] text-footnote ${nudge.stale ? 'font-medium text-warn' : 'text-label-2'}`} data-testid="confirm-nudge">
+            {nudge.text}
+          </button>
+        )}
       </div>
-      <div className="mx-4 mb-6 grid grid-cols-3 gap-2">
-        <Action icon={inv ? <TrendingUp size={20} /> : <SlidersHorizontal size={20} />} label={inv ? 'Update value' : 'Correct'} onPress={() => openSheet({ kind: 'correct', account })} />
+      <div className={`mx-4 mb-6 grid gap-2 ${wallet ? 'grid-cols-4' : 'grid-cols-3'}`}>
+        <Action icon={inv ? <TrendingUp size={20} /> : wallet ? <RefreshCw size={20} /> : <SlidersHorizontal size={20} />} label={inv ? 'Update value' : wallet ? 'Balance' : 'Correct'} aria={wallet ? 'Update balance' : undefined} onPress={() => openSheet({ kind: 'correct', account })} />
+        {wallet && <Action icon={<FileDown size={20} />} label="Import" aria="Import statement" onPress={() => openSheet({ kind: 'import', accountId: account.id })} />}
         <Action icon={<ArrowLeftRight size={20} />} label="Transfer" onPress={() => openSheet({ kind: 'add', type: 'transfer', accountId: account.id })} />
         <Action icon={<Plus size={20} />} label="Add" onPress={() => openSheet({ kind: 'add', accountId: account.id })} />
       </div>
+      {wm && (
+        <div className="mb-6">
+          <WalletCard w={wm} title="This month" />
+        </div>
+      )}
       {txs.length ? (
         <TxGroups txs={txs} accounts={accounts} categories={categories} debts={debts} perspective={account.id} />
       ) : (
@@ -255,9 +285,9 @@ export function AccountDetailSheet({ open, onClose, id, z }: { open: boolean; on
   );
 }
 
-function Action({ icon, label, onPress }: { icon: React.ReactNode; label: string; onPress: () => void }) {
+function Action({ icon, label, onPress, aria }: { icon: React.ReactNode; label: string; onPress: () => void; aria?: string }) {
   return (
-    <button type="button" onClick={onPress} className="pressable card flex h-[64px] flex-col items-center justify-center gap-1 text-accent">
+    <button type="button" onClick={onPress} aria-label={aria} className="pressable card flex h-[64px] flex-col items-center justify-center gap-1 text-accent">
       {icon}
       <span className="text-footnote font-medium">{label}</span>
     </button>
