@@ -195,6 +195,37 @@ for (const scheme of SCHEMES) {
     await page.getByRole('tab', { name: 'Home' }).click();
     await page.getByRole('button', { name: 'Settings' }).click();
     await shot(page, scheme, '15-settings');
+    // v1.2.1: patch notes
+    const settings = page.getByRole('dialog', { name: 'Settings' });
+    await settings.getByRole('button', { name: /^Patch notes/ }).scrollIntoViewIfNeeded();
+    await shot(page, scheme, '15b-settings-about');
+    await settings.getByRole('button', { name: /^Patch notes/ }).click();
+    await shot(page, scheme, '15c-patch-notes');
+    await page.getByRole('dialog', { name: 'Patch notes' }).getByRole('button', { name: 'Back to Settings' }).click();
+    await settings.getByRole('button', { name: 'Done' }).click();
+
+    // v1.2.1: category picker (folded, More + search) and a new category from the picker
+    await page.getByRole('button', { name: 'Add transaction', exact: true }).click();
+    const add = page.getByRole('dialog', { name: 'Add transaction' });
+    await typeAmount(page, '1500');
+    await shot(page, scheme, '15d-picker');
+    await add.getByRole('button', { name: 'More', exact: true }).click();
+    await shot(page, scheme, '15e-picker-more');
+    await add.getByLabel('Search categories').fill('rep');
+    await shot(page, scheme, '15f-picker-search');
+    await add.getByLabel('Search categories').fill('');
+    await add.getByRole('button', { name: 'New expense category' }).click();
+    const editor = page.getByRole('dialog', { name: 'New category' });
+    await editor.getByLabel('Category name').fill('Watch repair');
+    await editor.getByRole('radio', { name: 'watch', exact: true }).click();
+    await editor.getByRole('radio', { name: '#7C3AED' }).click();
+    await editor.getByLabel('Category name').blur();
+    await shot(page, scheme, '15g-new-category');
+    await editor.getByRole('button', { name: 'Add', exact: true }).click();
+    await expect(editor).toBeHidden();
+    await add.getByRole('button', { name: 'Less', exact: true }).click();
+    await shot(page, scheme, '15h-picker-new-selected');
+    await add.getByRole('button', { name: 'Cancel' }).click();
 
     // design kit gallery
     await page.goto('/_kit');
