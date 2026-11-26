@@ -146,6 +146,11 @@ input, textarea, select {
   backdrop-filter: saturate(180%) blur(20px);
 }
 
+/* Bar without a blur, for pages that already show two blurred surfaces. */
+.material-solid {
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+}
+
 .card {
   background: var(--surface);
   border-radius: 20px;
