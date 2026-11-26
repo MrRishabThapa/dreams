@@ -93,6 +93,8 @@ export interface UserSettings extends Base {
   monthly_savings_target_minor: Minor | null;
   theme: 'auto' | 'light' | 'dark';
   auto_sync: boolean;
+  /** shown in the Home greeting; synced. Missing on rows from before v1.2.2. */
+  display_name?: string | null;
 }
 
 export interface Ledger {

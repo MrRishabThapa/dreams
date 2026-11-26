@@ -124,6 +124,7 @@ create table public.user_settings (
   monthly_savings_target_minor bigint,
   theme text not null default 'auto',
   auto_sync boolean not null default false,
+  display_name text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   deleted_at timestamptz,
