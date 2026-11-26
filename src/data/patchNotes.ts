@@ -12,12 +12,36 @@ export interface PatchItem {
 export interface PatchNote {
   /** semver, same as package.json, e.g. "1.2.1" */
   version: string;
+  /** what people see when it differs from the semver, e.g. "1.2.2.1" for 1.2.3 */
+  label?: string;
   /** release day, YYYY-MM-DD */
   date: string;
   groups: { new?: PatchItem[]; improved?: PatchItem[]; fixed?: PatchItem[] };
 }
 
+/** The name shown for a release: its label, else its version. */
+export const versionName = (n: Pick<PatchNote, 'version' | 'label'>) => n.label ?? n.version;
+
+/** The running build's version name (package.json's version, or that release's label). */
+export function appVersionName(pkgVersion: string = __APP_VERSION__): string {
+  const n = PATCH_NOTES.find((x) => x.version === pkgVersion);
+  return n ? versionName(n) : pkgVersion;
+}
+
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: '1.2.3',
+    label: '1.2.2.1',
+    date: '2026-11-26',
+    groups: {
+      fixed: [
+        { keyword: 'Profit graph fix', text: 'the graph now shows what you earned minus what you spent (plus investment gains), like Saved on the month card. Balance corrections such as an eSewa “Update balance” no longer count as profit.' },
+        { keyword: 'Header fix', text: 'the greeting no longer shows twice or overlaps the top bar while scrolling.' },
+        { keyword: 'Sync reliability', text: 'if the server is missing a new column, only that change waits; everything else keeps syncing, and Settings → Sync shows the exact SQL to run.' },
+      ],
+      improved: [{ keyword: 'Plain graph card', text: 'the Home graph card is back to the same solid style as the other cards.' }],
+    },
+  },
   {
     version: '1.2.2',
     date: '2026-11-26',

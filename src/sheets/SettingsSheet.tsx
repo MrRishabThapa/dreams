@@ -18,6 +18,7 @@ import { backupNudge, exportBackupFile, shareOrDownload, transactionsCSV } from 
 import { formatMoney, parseMoney } from '../domain/money';
 import { today } from '../domain/dates';
 import { Logo } from '../ui/Logo';
+import { appVersionName } from '../data/patchNotes';
 import { displayName, NAME_MAX } from '../domain/greeting';
 
 const ic = (el: React.ReactNode) => <span className="flex h-[30px] w-[30px] items-center justify-center text-accent">{el}</span>;
@@ -181,10 +182,10 @@ export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: ()
           <Logo size={52} label="Dreams logo" />
           <div className="min-w-0 flex-1">
             <div className="text-headline">Dreams</div>
-            <div className="text-footnote text-label-2">Version {__APP_VERSION__} · Know your money. Fund your dreams.</div>
+            <div className="text-footnote text-label-2">Version {appVersionName()} · Know your money. Fund your dreams.</div>
           </div>
         </div>
-        <Row icon={ic(<ScrollText size={20} />)} title="Patch notes" value={`v${__APP_VERSION__}`} chevron onPress={() => openSheet({ kind: 'patchNotes' })} />
+        <Row icon={ic(<ScrollText size={20} />)} title="Patch notes" value={`v${appVersionName()}`} chevron onPress={() => openSheet({ kind: 'patchNotes' })} />
       </Group>
     </Sheet>
   );

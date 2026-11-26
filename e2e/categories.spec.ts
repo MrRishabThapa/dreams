@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { netWorthValue, onboard, typeAmount } from './helpers';
 
@@ -63,8 +62,9 @@ test('Settings → Patch notes shows the current version first with a Latest pil
   const notes = page.getByRole('dialog', { name: 'Patch notes' });
   await expect(notes.getByText(/You’re on version \d+\.\d+\.\d+\./)).toBeVisible();
   const headings = notes.getByRole('heading', { level: 2 });
-  const version = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version as string;
-  await expect(headings.first()).toHaveText(`v${version}`);
+  // the newest card is the running version (its display name, e.g. v1.2.2.1 for 1.2.3)
+  const running = (await notes.getByText(/You’re on version/).locator('strong').textContent())!.replace('version ', '');
+  await expect(headings.first()).toHaveText(`v${running}`);
   await expect(headings.filter({ hasText: /^v1\.(2\.1|2\.0|1\.0|0\.0)$/ })).toHaveText(['v1.2.1', 'v1.2.0', 'v1.1.0', 'v1.0.0']);
   const first = notes.getByTestId('patch-card').first();
   await expect(first.getByText('Latest', { exact: true })).toBeVisible();

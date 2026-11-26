@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { PATCH_NOTES } from './patchNotes';
+import { appVersionName, PATCH_NOTES, versionName } from './patchNotes';
 
 const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { version: string };
 const parts = (v: string) => v.split('.').map(Number);
@@ -25,6 +25,15 @@ describe('patch notes', () => {
       expect(cmp(PATCH_NOTES[i - 1].version, PATCH_NOTES[i].version)).toBeGreaterThan(0);
       expect(PATCH_NOTES[i - 1].date >= PATCH_NOTES[i].date).toBe(true);
     }
+  });
+
+  it('labels look like versions, are unique, and the app shows the label of the running version', () => {
+    const names = PATCH_NOTES.map(versionName);
+    for (const v of names) expect(v).toMatch(/^\d+\.\d+\.\d+(\.\d+)?$/);
+    expect(new Set(names).size).toBe(names.length);
+    expect(appVersionName('1.2.3')).toBe('1.2.2.1');
+    expect(appVersionName('1.2.2')).toBe('1.2.2');
+    expect(appVersionName('9.9.9')).toBe('9.9.9');
   });
 
   it('every release says something, and every item has a keyword and text', () => {

@@ -1,7 +1,7 @@
 import { ChevronLeft } from 'lucide-react';
 import { Sheet } from '../ui/Sheet';
 import { NavButton } from '../ui/Button';
-import { PATCH_NOTES, type PatchItem } from '../data/patchNotes';
+import { appVersionName, PATCH_NOTES, versionName, type PatchItem } from '../data/patchNotes';
 
 const GROUPS: { key: 'new' | 'improved' | 'fixed'; label: string }[] = [
   { key: 'new', label: 'New' },
@@ -30,12 +30,12 @@ export function PatchNotesSheet({ open, onClose, z }: { open: boolean; onClose: 
       }
     >
       <p className="mx-5 mt-1 text-[16px] leading-[22px] text-label-2">
-        You’re on <strong className="font-semibold text-label">version {__APP_VERSION__}</strong>. Here’s what changed in each release, newest first.
+        You’re on <strong className="font-semibold text-label">version {appVersionName()}</strong>. Here’s what changed in each release, newest first.
       </p>
       {PATCH_NOTES.map((n, i) => (
         <article key={n.version} className="card mx-4 mt-4 px-4 pb-4 pt-3.5" aria-labelledby={`v-${n.version}`} data-testid="patch-card">
           <header className="flex items-center gap-2">
-            <h2 id={`v-${n.version}`} className="text-title3 text-label">v{n.version}</h2>
+            <h2 id={`v-${n.version}`} className="text-title3 text-label">v{versionName(n)}</h2>
             {i === 0 && (
               <span className="rounded-full bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] px-2 py-0.5 text-caption font-semibold text-accent">Latest</span>
             )}
@@ -43,7 +43,7 @@ export function PatchNotesSheet({ open, onClose, z }: { open: boolean; onClose: 
           </header>
           <div className="my-3 h-px bg-separator" aria-hidden />
           {GROUPS.filter((g) => n.groups[g.key]?.length).map((g, gi) => (
-            <section key={g.key} className={gi ? 'mt-4' : ''} aria-label={`${g.label} in v${n.version}`}>
+            <section key={g.key} className={gi ? 'mt-4' : ''} aria-label={`${g.label} in v${versionName(n)}`}>
               <h3 className="text-caption font-semibold uppercase tracking-[0.06em] text-label-2">{g.label}</h3>
               <ul className="mt-1.5 space-y-2">
                 {n.groups[g.key]!.map((it) => (
