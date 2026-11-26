@@ -10,6 +10,7 @@ import { Sheet } from '../ui/Sheet';
 import { NavButton } from '../ui/Button';
 import { TxGroups } from '../ui/TxList';
 import { Donut, PairBars, RankedBars, SERIES } from '../ui/charts';
+import { WalletCard } from '../ui/WalletCard';
 import { useToast } from '../ui/Toast';
 import { useConfirm } from '../ui/ActionSheet';
 import { useApp } from '../lib/app';
@@ -346,6 +347,11 @@ function Report({ snap, closed, closedAt, isCurrent, onCategory, footer }: { sna
         <Line label="Investment gain / loss" value={s.investmentGainLoss} />
         <Line label="Dreams funded" value={snap.dreamsFunded} />
       </Card>
+
+      {/* 5b. e-wallets (eSewa…): each from its own transactions; transfers stay out of income and spending */}
+      {(snap.wallets ?? []).map((w) => (
+        <WalletCard key={w.accountId} w={w} title={`${w.name} · e-wallet`} />
+      ))}
 
       {/* 6. debts */}
       <Card title="Debts">
