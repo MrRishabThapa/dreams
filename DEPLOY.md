@@ -93,6 +93,12 @@ pick the `.json` file (Files or iCloud Drive on iPhone; Files or Drive on Androi
 - Check the status bar, safe areas around the notch and home indicator, the keyboard over sheets,
   and scrolling smoothness.
 - Settings → **Back Up Now** → save to Files. Keep a backup until sync arrives.
+- **Face ID (v1.2):** open Dreams **from the Home Screen icon**, Settings → App Lock → set a PIN →
+  turn on **Lock with Face ID** (Face ID asks once to confirm). Close Dreams from the app switcher
+  and reopen: Face ID should unlock. If the toggle says it isn't available or Face ID never appears
+  (WebAuthn in iOS 16 Home Screen apps has been unreliable), keep PIN only: it is fully supported.
+- **Build check:** the Cloudflare build log should still show
+  `[dreams] sync configured: yes (https://cshqseusqlbwhgpfynyf.supabase.co)`.
 
 ## 5. Updating
 
