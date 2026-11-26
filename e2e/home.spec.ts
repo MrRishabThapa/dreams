@@ -101,3 +101,29 @@ test('graph: a loss is red with ▼; scrubbing shows the day, then returns to th
   await expect(tip).toBeHidden();
   await expect(value).toHaveAttribute('data-value', '-200000');
 });
+
+for (const scheme of ['light', 'dark'] as const) {
+  test(`header (${scheme}): the greeting shows once, at the top and after scrolling`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await onboard(page);
+    const prompt = page.getByRole('region', { name: 'Your name' });
+    await prompt.getByPlaceholder('Your name').fill('Rishab');
+    await prompt.getByRole('button', { name: 'Save' }).click();
+    const opacity = (sel: string) => page.locator(sel).first().evaluate((el) => Number(getComputedStyle(el).opacity));
+    // top: the large greeting only
+    await expect.poll(() => opacity('h1')).toBe(1);
+    await expect.poll(() => opacity('[data-testid="bar-title"]')).toBe(0);
+    // scrolled: the compact "Good …, Rishab" only
+    await page.evaluate(() => window.scrollTo(0, 300));
+    await expect.poll(() => opacity('h1')).toBe(0);
+    await expect.poll(() => opacity('[data-testid="bar-title"]')).toBe(1);
+    await expect(page.getByTestId('bar-title')).toHaveText(/^Good (morning|afternoon|evening|night), Rishab$/);
+    // halfway: never both fully visible
+    for (const y of [10, 20, 26, 30, 36]) {
+      await page.evaluate((v) => window.scrollTo(0, v), y);
+      await page.waitForTimeout(50);
+      const [a, b] = [await opacity('h1'), await opacity('[data-testid="bar-title"]')];
+      expect(a + b, `scrollY ${y}`).toBeLessThanOrEqual(1.01);
+    }
+  });
+}
