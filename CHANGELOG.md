@@ -1,5 +1,32 @@
 # Changelog
 
+## v1.2.2.1 (package 1.2.3, 2026-11-26)
+
+**Profit graph fix**
+- Bug: the graph plotted the change in *net worth*, so a balance correction counted as profit. On the iPhone, the
+  graph showed +Rs 1,623 while the month card said Saved −Rs 80: about Rs 1,703 of corrections (most likely an eSewa
+  "Update balance" or a "Correct balance"), which change net worth but aren't income.
+- Now: profit = income − spending + investment gain/loss over the range, by each transaction's own local date.
+  Corrections, transfers, debt-linked transactions, opening balances, deleted rows and rows on deleted accounts are
+  left out. A calendar month on the graph equals that month's Saved (+ investment gain/loss) in the audit.
+
+**Header fix**
+- The greeting showed twice while scrolling: Home's solid top bar let the large greeting show through under the
+  compact one. The bar is blurred again, and the large title fades out as the compact "Good …, Name" fades in.
+
+**Plain graph card**
+- The Home graph card is back to the plain card style (no glass, sheen or glow). The graph itself is unchanged.
+
+**Sync reliability**
+- A server that lacks a column the app sends (e.g. `user_settings.display_name` before the v1.2.2 SQL) no longer
+  stops the sync: only that table waits (its rows stay pending), everything else pushes and pulls.
+- Sync checks the newer columns once per start; Settings → Sync shows **Server: Needs an update** with the exact SQL.
+- `supabase/schema.sql` ends with an idempotent schema-changes block plus `notify pgrst, 'reload schema'`;
+  DEPLOY.md has "Schema changes: run before deploying a client that uses new columns".
+- Lock settings (PIN hash, Face ID credential id, auto-lock) are device-only and never in `user_settings` or the payload (tested).
+
+**Version name:** shown as v1.2.2.1; package.json is 1.2.3 (npm needs semver, and 1.2.2-1 would sort before 1.2.2).
+
 ## v1.2.2 (2026-11-26)
 
 **Profit graph**
