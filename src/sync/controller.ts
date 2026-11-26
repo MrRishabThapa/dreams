@@ -159,6 +159,38 @@ export async function signIn(email: string, password: string): Promise<string | 
   }
 }
 
+/** The email of the session stored on this device, if any (read without loading supabase-js). */
+export function storedEmail(): string | null {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    const email = raw ? (JSON.parse(raw) as { user?: { email?: string } })?.user?.email : null;
+    return email ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Forgot PIN: proves it's the owner by signing in to the sync account with email and
+ * password. Nothing local is touched; the caller then lets them choose a new PIN. If this
+ * device already syncs, it must be the same account.
+ */
+export async function reauthenticate(email: string, password: string): Promise<string | null> {
+  if (!state.configured) return 'Sync isn’t set up in this build.';
+  if (!navigator.onLine) return 'You’re offline. Connect to the internet to reset your PIN.';
+  const mine = storedEmail();
+  if (mine && mine.toLowerCase() !== email.trim().toLowerCase()) return 'Use the email this iPhone syncs with.';
+  try {
+    const sb = await client();
+    const { data, error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
+    if (error || !data.session) return signInMessage(error ?? { message: 'Sign-in failed' });
+    set({ signedIn: true, email: data.session.user.email ?? email.trim(), error: null });
+    return null;
+  } catch (e) {
+    return signInMessage(e);
+  }
+}
+
 /** Signs out on this device only. Local data is never deleted. */
 export async function signOut(): Promise<void> {
   try {
