@@ -49,6 +49,7 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
   const [more, setMore] = useState(false);
   const [query, setQuery] = useState('');
   const dateRef = useRef<HTMLInputElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   const accounts = liveAccounts(data);
   const lastAccount = useLiveQuery(() => getMeta<string | null>('lastAccountId', null), []);
@@ -238,9 +239,10 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
 
         {/* categories */}
         {mode !== 'transfer' && !isAdjust && (
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain" data-testid="category-picker">
+          <div ref={pickerRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain" data-testid="category-picker">
             {long && more && (
-              <label className="sticky top-0 z-[1] mx-4 mb-2 flex h-9 shrink-0 items-center gap-2 rounded-[10px] bg-fill px-2.5 text-label-2">
+              <div className="sticky top-0 z-[1] shrink-0 bg-[var(--sheet-bg,var(--bg))] px-4 pb-2 pt-1">
+              <label className="flex h-9 items-center gap-2 rounded-[10px] bg-fill px-2.5 text-label-2">
                 <Search size={17} aria-hidden />
                 <input
                   type="search"
@@ -253,8 +255,9 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
                   className="h-9 min-w-0 flex-1 bg-transparent text-[17px] text-label outline-none placeholder:text-label-3"
                 />
               </label>
+              </div>
             )}
-            <div className="grid auto-rows-min grid-cols-4 px-2">
+            <div className="grid auto-rows-min grid-cols-4 px-2 pt-1">
               <div className="contents" role="radiogroup" aria-label="Category">
                 {shownCats.map((c) => {
                   const sel = cat.id === c.id;
@@ -276,7 +279,11 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
                 })}
               </div>
               {long && !query.trim() && (
-                <PickerTile label={more ? 'Less' : 'More'} aria-expanded={more} onClick={() => setMore((m) => !m)}>
+                <PickerTile label={more ? 'Less' : 'More'} aria-expanded={more} onClick={() => {
+                  setMore((m) => !m);
+                  // start from the top, with the search box in view, not where the More tile was
+                  requestAnimationFrame(() => pickerRef.current?.scrollTo({ top: 0 }));
+                }}>
                   {more ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
                 </PickerTile>
               )}
