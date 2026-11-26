@@ -1,4 +1,4 @@
-import { CalendarDays, ArrowRight, ChevronDown, Trash2 } from 'lucide-react';
+import { CalendarDays, ArrowRight, ChevronDown, ChevronUp, Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Sheet } from '../ui/Sheet';
@@ -18,6 +18,11 @@ import type { Transaction, TxType } from '../domain/types';
 import { db } from '../db/db';
 
 type Mode = 'expense' | 'income' | 'transfer';
+
+/** Tiles shown before "More" once the list is long (3 rows of 4 with More and New). */
+const COLLAPSED = 10;
+const LONG = 12;
+const norm = (s: string) => s.trim().toLowerCase();
 
 function toExpr(minor: number): string {
   const w = Math.floor(minor / 100);
@@ -41,6 +46,8 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
   const [date, setDate] = useState(tx?.occurred_on ?? today());
   const [note, setNote] = useState(tx?.note ?? '');
   const [shake, setShake] = useState(0);
+  const [more, setMore] = useState(false);
+  const [query, setQuery] = useState('');
   const dateRef = useRef<HTMLInputElement>(null);
 
   const accounts = liveAccounts(data);
@@ -65,6 +72,28 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
     (recentCats ?? []).forEach((id, i) => !rank.has(id) && rank.set(id, i));
     return [...list].sort((a, b) => (rank.get(a.id) ?? 999 + a.sort) - (rank.get(b.id) ?? 999 + b.sort));
   }, [data, mode, recentCats]);
+
+  // most-used first; a long list folds behind More (the picked one always stays visible)
+  const long = cats.length > LONG;
+  const shownCats = useMemo(() => {
+    if (!long) return cats;
+    if (more) return query.trim() ? cats.filter((c) => norm(c.name).includes(norm(query))) : cats;
+    const head = cats.slice(0, COLLAPSED);
+    const picked = cat.id && !head.some((c) => c.id === cat.id) ? cats.find((c) => c.id === cat.id) : undefined;
+    return picked ? [...head.slice(0, COLLAPSED - 1), picked] : head;
+  }, [cats, long, more, query, cat.id]);
+
+  const newCategory = () => {
+    if (mode === 'transfer') return;
+    openSheet({
+      kind: 'category',
+      type: mode,
+      onSaved: (c) => {
+        setCat({ id: c.id, name: c.name });
+        setQuery('');
+      },
+    });
+  };
 
   const amount = evalExpression(expr);
   const hasOp = /[+\-×÷]/.test(expr.slice(1));
@@ -153,6 +182,8 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
               onChange={(m) => {
                 setMode(m);
                 setCat({ id: null, name: null });
+                setMore(false);
+                setQuery('');
               }}
               options={[
                 { value: 'expense', label: 'Expense' },
@@ -207,25 +238,55 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
 
         {/* categories */}
         {mode !== 'transfer' && !isAdjust && (
-          <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-4 overflow-y-auto overscroll-contain px-2" role="radiogroup" aria-label="Category">
-            {cats.map((c) => {
-              const sel = cat.id === c.id;
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={sel}
-                  onClick={() => setCat({ id: c.id, name: c.name })}
-                  className="pressable flex flex-col items-center gap-1 rounded-ctl py-1"
-                >
-                  <span className={`rounded-[13px] p-[2px] ${sel ? 'ring-2 ring-accent ring-offset-2 ring-offset-[var(--sheet-bg)]' : ''}`}>
-                    <IconTile name={c.icon} color={c.color} size={40} />
-                  </span>
-                  <span className={`max-w-full truncate px-1 text-[11px] ${sel ? 'font-semibold text-accent' : 'text-label-2'}`}>{c.name}</span>
-                </button>
-              );
-            })}
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain" data-testid="category-picker">
+            {long && more && (
+              <label className="sticky top-0 z-[1] mx-4 mb-2 flex h-9 shrink-0 items-center gap-2 rounded-[10px] bg-fill px-2.5 text-label-2">
+                <Search size={17} aria-hidden />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search categories"
+                  aria-label="Search categories"
+                  enterKeyHint="search"
+                  onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+                  className="h-9 min-w-0 flex-1 bg-transparent text-[17px] text-label outline-none placeholder:text-label-3"
+                />
+              </label>
+            )}
+            <div className="grid auto-rows-min grid-cols-4 px-2">
+              <div className="contents" role="radiogroup" aria-label="Category">
+                {shownCats.map((c) => {
+                  const sel = cat.id === c.id;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={sel}
+                      onClick={() => setCat({ id: c.id, name: c.name })}
+                      className="pressable flex flex-col items-center gap-1 rounded-ctl py-1"
+                    >
+                      <span className={`rounded-[13px] p-[2px] ${sel ? 'ring-2 ring-accent ring-offset-2 ring-offset-[var(--sheet-bg)]' : ''}`}>
+                        <IconTile name={c.icon} color={c.color} size={40} />
+                      </span>
+                      <span className={`max-w-full truncate px-1 text-[11px] ${sel ? 'font-semibold text-accent' : 'text-label-2'}`}>{c.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {long && !query.trim() && (
+                <PickerTile label={more ? 'Less' : 'More'} aria-expanded={more} onClick={() => setMore((m) => !m)}>
+                  {more ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
+                </PickerTile>
+              )}
+              <PickerTile label="New" aria-label={`New ${mode} category`} onClick={newCategory} accent>
+                <Plus size={22} />
+              </PickerTile>
+            </div>
+            {long && more && query.trim() && shownCats.length === 0 && (
+              <p className="px-6 pb-2 pt-1 text-center text-footnote text-label-2">No category called “{query.trim()}”. Tap New to add it.</p>
+            )}
           </div>
         )}
 
@@ -264,3 +325,19 @@ export function AddSheet({ open, onClose, tx, type, accountId, z }: { open: bool
   );
 }
 
+
+function PickerTile({ label, children, accent, ...rest }: { label: string; children: React.ReactNode; accent?: boolean } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button type="button" className="pressable flex flex-col items-center gap-1 rounded-ctl py-1" {...rest}>
+      <span className="p-[2px]">
+        <span
+          className={`flex h-10 w-10 items-center justify-center rounded-[11px] ${accent ? 'bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] text-accent' : 'bg-fill text-label-2'}`}
+          aria-hidden
+        >
+          {children}
+        </span>
+      </span>
+      <span className={`max-w-full truncate px-1 text-[11px] ${accent ? 'font-medium text-accent' : 'text-label-2'}`}>{label}</span>
+    </button>
+  );
+}
