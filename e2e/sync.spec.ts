@@ -113,3 +113,40 @@ test('sign in, offline changes, back online → "Sync N changes?" banner → Syn
 
   expect(m.unexpected).toEqual([]);
 });
+
+test('a server missing a new column: clear status with the SQL, other tables still sync, then it catches up', async ({ page }) => {
+  const m = await mockSupabase(page);
+  m.missing = ['user_settings.display_name'];
+  await onboard(page, { balance: '10000' });
+  const prompt = page.getByRole('region', { name: 'Your name' });
+  await prompt.getByPlaceholder('Your name').fill('Rishab');
+  await prompt.getByRole('button', { name: 'Save' }).click();
+  await addExpense(page, '250');
+
+  const sync = await openSync(page);
+  await sync.getByLabel('Email').fill(EMAIL);
+  await sync.getByLabel('Password').fill(MOCK_PASSWORD);
+  await sync.getByRole('button', { name: 'Sign In' }).click();
+  await expect(sync.getByTestId('sync-server')).toHaveText('Needs an update');
+  const box = sync.getByTestId('sync-schema');
+  await expect(box).toContainText('Server needs an update: run the schema SQL');
+  await expect(box).toContainText('user_settings.display_name');
+  await expect(box.locator('pre')).toContainText("alter table public.user_settings add column if not exists display_name text;");
+  await expect(box.locator('pre')).toContainText("notify pgrst, 'reload schema';");
+  // everything else went up; only the settings row waits
+  await expect.poll(() => pushedTx(m).length).toBe(1);
+  await expect(sync.getByRole('button', { name: 'Sync Now' })).toBeEnabled();
+  expect(m.upserts.some((u) => u.table === 'user_settings')).toBe(false);
+  await expect(sync.getByTestId('sync-pending')).toHaveText('1');
+
+  // Rishab runs the SQL; the next sync clears it
+  m.missing = [];
+  await sync.getByRole('button', { name: 'Sync Now' }).click();
+  await expect(sync.getByTestId('sync-server')).toHaveText('Up to date');
+  await expect(sync.getByTestId('sync-schema')).toHaveCount(0);
+  await expect(sync.getByTestId('sync-pending')).toHaveText('0');
+  const settingsRow = m.upserts.filter((u) => u.table === 'user_settings').flatMap((u) => u.rows)[0];
+  expect(settingsRow.display_name).toBe('Rishab');
+  // device-local lock settings never travel
+  for (const k of ['pin', 'pinHash', 'salt', 'faceId', 'credentialId', 'lockTimeout', 'appLock']) expect(k in settingsRow).toBe(false);
+});

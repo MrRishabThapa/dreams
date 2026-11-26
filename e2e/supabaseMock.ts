@@ -25,10 +25,12 @@ export interface Mock {
   upserts: { table: string; rows: Record<string, unknown>[]; auth: string | null }[];
   unexpected: string[];
   failNextUpsert: number | null;
+  /** `table.column` the server doesn't have yet: upserts with it and selects of it fail like PostgREST (PGRST204) */
+  missing: string[];
 }
 
 export async function mockSupabase(page: Page): Promise<Mock> {
-  const m: Mock = { upserts: [], unexpected: [], failNextUpsert: null };
+  const m: Mock = { upserts: [], unexpected: [], failNextUpsert: null, missing: [] };
   await page.route(`${ORIGIN}/**`, async (route: Route) => {
     const req = route.request();
     const url = new URL(req.url());
@@ -41,7 +43,12 @@ export async function mockSupabase(page: Page): Promise<Mock> {
     if (url.pathname === '/auth/v1/user') return json(200, USER);
     if (url.pathname === '/auth/v1/logout') return route.fulfill({ status: 204 });
     const rest = url.pathname.match(/^\/rest\/v1\/(\w+)$/);
+    const lacks = (table: string, has: (col: string) => boolean) => m.missing.find((tc) => tc.startsWith(`${table}.`) && has(tc.split('.')[1]));
+    const schemaErr = (tc: string) => json(400, { code: 'PGRST204', details: null, hint: null, message: `Could not find the '${tc.split('.')[1]}' column of '${tc.split('.')[0]}' in the schema cache` });
     if (rest && req.method() === 'POST') {
+      const body = req.postDataJSON() as Record<string, unknown>[];
+      const tc = lacks(rest[1], (col) => body.some((r) => col in r));
+      if (tc) return schemaErr(tc);
       if (m.failNextUpsert) {
         m.failNextUpsert = null;
         return json(503, { message: 'Service unavailable' });
@@ -49,7 +56,11 @@ export async function mockSupabase(page: Page): Promise<Mock> {
       m.upserts.push({ table: rest[1], rows: req.postDataJSON(), auth: req.headers()['authorization'] ?? null });
       return route.fulfill({ status: 201, body: '' });
     }
-    if (rest && req.method() === 'GET') return json(200, []);
+    if (rest && req.method() === 'GET') {
+      const tc = lacks(rest[1], (col) => (url.searchParams.get('select') ?? '').split(',').includes(col));
+      if (tc) return schemaErr(tc);
+      return json(200, []);
+    }
     m.unexpected.push(`${req.method()} ${url.pathname}`);
     return route.abort();
   });
