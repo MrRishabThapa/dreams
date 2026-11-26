@@ -98,9 +98,9 @@ for (const scheme of ['light', 'dark'] as const) {
     const pinPad = () => page.getByRole('group', { name: 'PIN keypad' }).last();
     for (const d of '24') await pinPad().getByRole('button', { name: d, exact: true }).click();
     await shot(page, scheme, '34-app-lock-choose');
-    for (const d of '68') await pinPad().getByRole('button', { name: d, exact: true }).click();
+    for (const d of '6802') await pinPad().getByRole('button', { name: d, exact: true }).click();
     await lockSheet.getByText('Enter it again').waitFor();
-    for (const d of '2468') await pinPad().getByRole('button', { name: d, exact: true }).click();
+    for (const d of '246802') await pinPad().getByRole('button', { name: d, exact: true }).click();
     await lockSheet.getByText('Change PIN').waitFor();
     await shot(page, scheme, '35-app-lock-on');
     await lockSheet.getByRole('button', { name: 'Immediately' }).click();
