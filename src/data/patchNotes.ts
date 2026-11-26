@@ -19,6 +19,19 @@ export interface PatchNote {
 
 export const PATCH_NOTES: PatchNote[] = [
   {
+    version: '1.2.2',
+    date: '2026-11-26',
+    groups: {
+      new: [
+        { keyword: 'Profit graph', text: 'switch the main card on Home to Graph to see your profit or loss day by day for 1W, 1M, 3M, 1Y or All. Green above zero, red below, and it always agrees with the monthly audit. Drag across it to see any day.' },
+        { keyword: 'Personal greeting', text: 'Home says good morning, afternoon, evening or night with your name. Set it once when asked, or any time in Settings → Profile.' },
+      ],
+      improved: [
+        { keyword: 'Frosted cards', text: 'the main Home card is now frosted glass, with a solid look when Reduce Transparency is on.' },
+      ],
+    },
+  },
+  {
     version: '1.2.1',
     date: '2026-11-26',
     groups: {
