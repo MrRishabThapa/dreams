@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Cloud, CloudOff, Download, FileSpreadsheet, Lock, Tags, Upload } from 'lucide-react';
+import { Cloud, CloudOff, Download, FileSpreadsheet, Lock, ScrollText, Tags, Upload } from 'lucide-react';
 import { SyncChip } from '../ui/SyncChip';
 import { useSync } from '../sync/useSync';
 import { Sheet } from '../ui/Sheet';
@@ -157,6 +157,7 @@ export function SettingsSheet({ open, onClose, z }: { open: boolean; onClose: ()
             <div className="text-footnote text-label-2">Version {__APP_VERSION__} · Know your money. Fund your dreams.</div>
           </div>
         </div>
+        <Row icon={ic(<ScrollText size={20} />)} title="Patch notes" value={`v${__APP_VERSION__}`} chevron onPress={() => openSheet({ kind: 'patchNotes' })} />
       </Group>
     </Sheet>
   );
