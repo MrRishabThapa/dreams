@@ -22,7 +22,9 @@ export type SheetReq =
   | { kind: 'appLock' }
   | { kind: 'sync' }
   | { kind: 'categories' }
-  | { kind: 'category'; category?: import('../domain/types').Category; type: 'income' | 'expense' };
+  | { kind: 'patchNotes' }
+  /** onSaved: a new category was added from a picker (it gets selected there) */
+  | { kind: 'category'; category?: import('../domain/types').Category; type: 'income' | 'expense'; onSaved?: (c: import('../domain/types').Category) => void };
 
 export interface SheetEntry {
   key: number;
