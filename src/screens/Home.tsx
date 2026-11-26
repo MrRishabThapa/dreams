@@ -1,4 +1,4 @@
-import { ChartPie, ChevronLeft, ChevronRight, Eye, EyeOff, Settings, WifiOff } from 'lucide-react';
+import { ChartLine, ChartPie, ChevronLeft, ChevronRight, Eye, EyeOff, Settings, WifiOff } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Page } from '../ui/Page';
@@ -18,6 +18,41 @@ import { addMonths, monthLabel, monthName, monthOf, today } from '../domain/date
 import { formatMoney } from '../domain/money';
 import { displayName, greetingFor, NAME_MAX } from '../domain/greeting';
 import { getMeta, patch, setMeta } from '../db/repo';
+import { Segmented } from '../ui/Segmented';
+import { ProfitChart } from '../ui/ProfitChart';
+import { dailyIndex, hasChart, profitSeries, PROFIT_RANGES, type ProfitRange, type ProfitSeries } from '../domain/profit';
+import { shortDate } from '../domain/dates';
+
+type HeroView = 'balance' | 'graph';
+/** per-device view choices (the card's tab and the graph range) */
+function usePref<T extends string>(key: string, allowed: readonly T[], fallback: T): [T, (v: T) => void] {
+  const [v, setV] = useState<T>(() => {
+    try {
+      const s = localStorage.getItem(key) as T | null;
+      return s && allowed.includes(s) ? s : fallback;
+    } catch {
+      return fallback;
+    }
+  });
+  const set = (next: T) => {
+    setV(next);
+    try {
+      localStorage.setItem(key, next);
+    } catch {
+      /* ignore */
+    }
+  };
+  return [v, set];
+}
+
+const SINCE: Record<ProfitRange, string> = { '1W': 'this week', '1M': 'this month', '3M': 'in 3 months', '1Y': 'this year', All: 'since you started' };
+
+function sinceLabel(s: ProfitSeries, today: string): string {
+  if (s.range === 'All') return `since ${shortDate(s.start)}`;
+  const days = { '1W': 7, '1M': 30, '3M': 90, '1Y': 365 }[s.range];
+  // clipped to the first recorded day: say so instead of claiming the whole range
+  return s.points.length < days && s.start !== today ? `since ${shortDate(s.start)}` : SINCE[s.range];
+}
 
 /** Greeting for the current local hour; refreshes every minute and when the app comes back. */
 function useGreeting(): string {
@@ -64,6 +99,8 @@ export function Home() {
   const now = today();
   const thisMonth = monthOf(now);
   const [month, setMonth] = useState(thisMonth);
+  const [view, setView] = usePref<HeroView>('dreams.homeView', ['balance', 'graph'], 'balance');
+  const [range, setRange] = usePref<ProfitRange>('dreams.profitRange', PROFIT_RANGES, '1M');
 
   const stats = useMemo(() => (data ? monthStats(data, thisMonth) : null), [data, thisMonth]);
   const series = useMemo(() => (data ? netWorthSeries(data, thisMonth, 6, now) : []), [data, thisMonth, now]);
@@ -71,6 +108,9 @@ export function Home() {
   const categories = useMemo(() => new Map((data?.categories ?? []).map((c) => [c.id, c])), [data]);
   const debts = useMemo(() => new Map((data?.debts ?? []).map((d) => [d.id, d])), [data]);
   const dreams = useMemo(() => liveDreams(data).map((d) => ({ d, p: dreamProgress(d, data?.dream_entries ?? [], now) })).sort((a, b) => Number(a.p.done) - Number(b.p.done)), [data, now]);
+  // one pass over the ledger per data change, then cheap per range
+  const index = useMemo(() => (data ? dailyIndex(data) : null), [data]);
+  const profit = useMemo(() => (data && index ? profitSeries(data, range, now, index) : null), [data, index, range, now]);
   const ready = useMemo(() => (data ? monthReadyToClose(data, data.audits, now) : null), [data, now]);
   const monthTxs = useMemo(() => liveTxs(data).filter((t) => t.occurred_on.startsWith(month)), [data, month]);
 
@@ -84,6 +124,7 @@ export function Home() {
 
   return (
     <Page
+      barBlur={false}
       title={greeting}
       heading={
         name ? (
@@ -139,33 +180,59 @@ export function Home() {
         </button>
       )}
 
-      {/* net worth hero */}
-      <section className="card mx-4 p-5" aria-label="Net worth">
-        <div className="text-subhead font-medium text-label-2">Net worth</div>
-        <Money
-          value={nw.netWorth}
-          animated
-          className={`rounded-num mt-0.5 block font-bold tracking-tight ${heroSize(formatMoney(nw.netWorth, { symbol }))}`}
-          data-testid="net-worth"
-        />
-        <div className="mt-2 flex items-end justify-between gap-3">
-          <div className="min-w-0 pb-0.5 text-footnote font-medium">
-            {series.length > 1 && delta6 !== 0 ? (
-              <span className={delta6 > 0 ? 'text-income' : 'text-expense'}>
-                <Money value={delta6} signed /> <span className="text-label-2">in 6 months</span>
-              </span>
-            ) : (
-              <span className="text-label-2">Your trend appears as months pass</span>
-            )}
-          </div>
-          <Sparkline values={series} width={112} height={36} color={delta6 < 0 ? 'var(--expense)' : 'var(--accent)'} />
-        </div>
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <Stat label="Assets" value={nw.assets} onPress={() => goToTab('money', 'accounts')} />
-          <Stat label="Owed to me" value={nw.owedToMe} onPress={() => goToTab('money', 'debts')} />
-          <Stat label="I owe" value={nw.iOwe} onPress={() => goToTab('money', 'debts')} />
-        </div>
-      </section>
+      {/* main card: net worth, or the profit graph (frosted; with the tab bar, the page's 2 blurred surfaces) */}
+      <div className="frost-wrap mx-4">
+        <section className="frost p-5" aria-label={view === 'graph' ? 'Profit graph' : 'Net worth'}>
+          <Segmented
+            value={view}
+            onChange={setView}
+            className="mb-4"
+            options={[
+              { value: 'balance', label: 'Balance' },
+              { value: 'graph', label: 'Graph' },
+            ]}
+          />
+          {view === 'balance' ? (
+            <>
+              <div className="text-subhead font-medium text-label-2">Net worth</div>
+              <Money
+                value={nw.netWorth}
+                animated
+                className={`rounded-num mt-0.5 block font-bold tracking-tight ${heroSize(formatMoney(nw.netWorth, { symbol }))}`}
+                data-testid="net-worth"
+              />
+              <div className="mt-2 flex items-end justify-between gap-3">
+                <div className="min-w-0 pb-0.5 text-footnote font-medium">
+                  {series.length > 1 && delta6 !== 0 ? (
+                    <span className={delta6 > 0 ? 'text-income' : 'text-expense'}>
+                      <Money value={delta6} signed /> <span className="text-label-2">in 6 months</span>
+                    </span>
+                  ) : (
+                    <span className="text-label-2">Your trend appears as months pass</span>
+                  )}
+                </div>
+                <Sparkline values={series} width={112} height={36} color={delta6 < 0 ? 'var(--expense)' : 'var(--accent)'} />
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <Stat label="Assets" value={nw.assets} onPress={() => goToTab('money', 'accounts')} />
+                <Stat label="Owed to me" value={nw.owedToMe} onPress={() => goToTab('money', 'debts')} />
+                <Stat label="I owe" value={nw.iOwe} onPress={() => goToTab('money', 'debts')} />
+              </div>
+            </>
+          ) : profit && index && hasChart(profit, index) ? (
+            <>
+              <ProfitChart series={profit} symbol={symbol} sinceLabel={sinceLabel(profit, now)} />
+              <RangeChips value={range} onChange={setRange} />
+            </>
+          ) : (
+            <div className="flex flex-col items-center py-6 text-center" data-testid="profit-empty">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] text-accent"><ChartLine size={24} /></span>
+              <div className="mt-3 text-headline">Your graph needs two days</div>
+              <p className="mt-1 max-w-[260px] text-subhead text-label-2">Log what you spend and earn today; from tomorrow you’ll see profit and loss day by day.</p>
+            </div>
+          )}
+        </section>
+      </div>
 
       {/* this month */}
       {stats && (
@@ -225,6 +292,24 @@ export function Home() {
   );
 }
 
+function RangeChips({ value, onChange }: { value: ProfitRange; onChange: (r: ProfitRange) => void }) {
+  return (
+    <div className="mt-3 grid grid-cols-5 gap-1" role="group" aria-label="Range">
+      {PROFIT_RANGES.map((r) => (
+        <button
+          key={r}
+          type="button"
+          aria-pressed={value === r}
+          onClick={() => onChange(r)}
+          className={`h-8 rounded-full text-[13px] font-semibold tnum ${value === r ? 'bg-[color-mix(in_srgb,var(--accent)_16%,transparent)] text-accent' : 'text-label-2 active:bg-fill'}`}
+        >
+          {r}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Asked once: a name for the greeting. "Not now" never asks again; Settings → Profile can set it any time. */
 function NamePrompt({ settingsId }: { settingsId: string }) {
   const [value, setValue] = useState('');
@@ -266,7 +351,7 @@ function heroSize(text: string): string {
 
 function Stat({ label, value, onPress }: { label: string; value: number; onPress?: () => void }) {
   return (
-    <button type="button" onClick={onPress} className="pressable min-w-0 rounded-ctl bg-surface-2 px-3 py-2 text-left">
+    <button type="button" onClick={onPress} className="pressable min-w-0 rounded-ctl bg-fill px-3 py-2 text-left">
       <div className="truncate text-caption font-medium text-label-2">{label}</div>
       <Money value={value} animated compact className="block truncate text-subhead font-semibold" />
     </button>
