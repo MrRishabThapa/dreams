@@ -64,6 +64,12 @@ Screenshots are from the iPhone X layout (375×812) with made-up demo data.
 - Edit by tapping, swipe left to delete, and **Undo** everything.
 - Amounts in **NPR with lakh/crore grouping** (`Rs 1,20,000`). Every amount is stored as whole paisa, never as a float.
 
+**eSewa and other e-wallets** (v1.2)
+- **Update balance**: type what the eSewa app shows; the difference is saved as a correction (never income or spending). A gentle "balance last confirmed N days ago" nudge.
+- **Statement import**: pick a CSV export (or paste one transaction per line), match the columns once (remembered), preview with duplicates marked and a category per row, then import. Re-importing the same file is safe. Parsed on the phone only.
+- **Wallet audit** on the account screen and in the monthly audit: opening, total in, total out, closing, fees, top categories and merchants, vs last month. Transfers bank ↔ eSewa never count as income or spending.
+- eSewa has no public API for personal wallets, so Dreams never logs in to it and never stores an eSewa password, MPIN, OTP or token.
+
 **Debts**
 - What you **owe** and what you're **owed**, with progress bars, due dates, and red "overdue" / orange "due soon" badges.
 - Optionally record the cash that changed hands. Borrowing Rs 50,000 with cash and repaying Rs 20,000 leaves Rs 30,000 owed, with net worth unchanged.
@@ -79,7 +85,7 @@ Screenshots are from the iPhone X layout (375×812) with made-up demo data.
 
 **Privacy and safety**
 - Works **fully offline**; your data lives on your phone (IndexedDB).
-- **App lock** with a 4–6 digit PIN (PBKDF2-hashed, never leaves the phone), auto-lock, and a privacy cover in the app switcher.
+- **App lock** with **Face ID** (WebAuthn platform authenticator) and a 6-digit PIN fallback (PBKDF2-hashed, never leaves the phone), auto-lock (immediately / 1 / 5 / 15 min), and a privacy cover in the app switcher. Forgot the PIN? Reset it by signing in to your sync account; no data is erased. It's a screen lock, not encryption of the data on the phone.
 - **Hide balances** blurs every amount for use in public.
 - **Backup / restore** as one JSON file, plus CSV and plain-text exports through the iOS share sheet.
 - Optional **sync** to your own Supabase project (email + password, row-level security, no third-party trackers).
@@ -215,13 +221,15 @@ On **Arch Linux**, run `scripts/setup-webkit-arch.sh` once so Playwright's WebKi
 
 ## Testing
 
-- **63 unit tests** (Vitest): money and date rules, balances, debts, dreams, the audit, backup/restore,
-  app lock, sync against a fake server that behaves like the real schema (two devices, stale edits,
+- **130+ unit tests** (Vitest): money and date rules, balances, debts, dreams, the audit, backup/restore,
+  app lock and Face ID (mocked authenticator), the statement importer (mapping, debit/credit sign,
+  paisa rounding, dedupe, category rules), wallet reconcile and audit math, sync against a fake server that behaves like the real schema (two devices, stale edits,
   a failed batch, deletes), a real build with environment variables, and a performance budget.
   A property test checks the net-worth reconciliation on 300 random ledgers. A full demo year must
   reconcile in every month, and closing then reopening each month must match its snapshot.
-- **16 end-to-end flows** (Playwright WebKit, iPhone X): onboarding, 3-tap add, 20 transactions
-  **offline**, debts, dreams, month close, backup → erase → restore, app lock, the category editor,
+- **20 end-to-end flows** (Playwright WebKit, iPhone X): onboarding, 3-tap add, 20 transactions
+  **offline**, debts, dreams, month close, backup → erase → restore, app lock, Face ID and
+  Forgot PIN, eSewa reconcile and CSV / paste import, the category editor,
   the offline → online sync banner (mocked Supabase), and a two-theme reduced-motion tour that
   fails on any console error.
 
@@ -253,6 +261,8 @@ docs/          README screenshots
 - Your data stays on your phone unless you turn on sync, and then it goes only to **your** Supabase
   project, protected by row-level security with a single user and sign-ups disabled.
 - The app-lock PIN is stored only as a salted hash on the device and is never backed up or synced.
+  For Face ID only the credential id is kept (device-local); your face never reaches the app.
+- Statement files are read on the phone; only the resulting transactions sync, like any other.
 - Keep a JSON backup now and then (Settings → Back Up Now); it doesn't depend on Supabase.
 
 ---
