@@ -141,3 +141,13 @@ begin
     execute format('create index on public.%I (user_id, server_modified_at)', t);
   end loop;
 end $$;
+
+-- ---------- Schema changes after the first release ----------
+-- Safe to run again on an existing project (idempotent). Run before deploying a client
+-- that uses new columns; see DEPLOY.md "Schema changes".
+
+-- v1.2.2: the name in the Home greeting
+alter table public.user_settings add column if not exists display_name text;
+
+-- make PostgREST pick up new columns right away
+notify pgrst, 'reload schema';
