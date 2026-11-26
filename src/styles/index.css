@@ -294,9 +294,10 @@ input[type='date'].text-right::-webkit-date-and-time-value {
 .frost-wrap::before {
   content: '';
   position: absolute;
-  inset: -6px 6px 10px;
+  /* kept inside the card's edges: the glass blurs it, nothing peeks out around it */
+  inset: 10px;
   z-index: -1;
-  border-radius: 32px;
+  border-radius: 20px;
   background:
     radial-gradient(55% 60% at 12% 18%, var(--sheen-a), transparent 72%),
     radial-gradient(45% 55% at 92% 30%, var(--sheen-b), transparent 70%),
