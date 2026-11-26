@@ -58,6 +58,9 @@ Screenshots are from the iPhone X layout (375×812) with made-up demo data.
 
 ## Features
 
+**Home** (v1.2.2)
+- A greeting with your name, and a frosted main card that switches between **Balance** and a stock-style **profit graph** (1W–All, green above zero and red below, drag to see any day). The graph and the monthly audit always agree.
+
 **Money**
 - Accounts of five kinds: cash, bank, e-wallet, savings, investment. Correct a balance or update an investment's value without faking income or spending.
 - Expenses, income and transfers in **3 taps or fewer**, with a custom keypad that does sums (`250+120×2`), recent-first categories, and Today / Yesterday / any date.
@@ -224,15 +227,15 @@ On **Arch Linux**, run `scripts/setup-webkit-arch.sh` once so Playwright's WebKi
 
 ## Testing
 
-- **138 unit tests** (Vitest): money and date rules, balances, debts, dreams, the audit, backup/restore,
+- **151 unit tests** (Vitest): money and date rules, balances, debts, dreams, the audit, backup/restore,
   app lock and Face ID (mocked authenticator), the statement importer (mapping, debit/credit sign,
-  paisa rounding, dedupe, category rules), default-category migration (idempotent, two devices, renames kept), patch notes vs package.json, wallet reconcile and audit math, sync against a fake server that behaves like the real schema (two devices, stale edits,
+  paisa rounding, dedupe, category rules), default-category migration (idempotent, two devices, renames kept), patch notes vs package.json, the profit series (gaps, exclusions, zero-crossing split, agrees with the audit every month of the demo year), greeting by hour, wallet reconcile and audit math, sync against a fake server that behaves like the real schema (two devices, stale edits,
   a failed batch, deletes), a real build with environment variables, and a performance budget.
   A property test checks the net-worth reconciliation on 300 random ledgers. A full demo year must
   reconcile in every month, and closing then reopening each month must match its snapshot.
-- **23 end-to-end flows** (Playwright WebKit, iPhone X): onboarding, 3-tap add, 20 transactions
+- **27 end-to-end flows** (Playwright WebKit, iPhone X): onboarding, 3-tap add, 20 transactions
   **offline**, debts, dreams, month close, backup → erase → restore, app lock, Face ID and
-  Forgot PIN, eSewa reconcile and CSV / paste import, the category editor, the category picker (More, search, New) and Patch notes,
+  Forgot PIN, eSewa reconcile and CSV / paste import, the category editor, the category picker (More, search, New), Patch notes, the greeting and name prompt, the profit graph (profit, loss, empty, scrubbing),
   the offline → online sync banner (mocked Supabase), and a two-theme reduced-motion tour that
   fails on any console error.
 
