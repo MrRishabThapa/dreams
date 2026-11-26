@@ -43,6 +43,13 @@ for (const scheme of SCHEMES) {
     await shot(page, scheme, '02-onboarding-welcome');
     await page.goto('/');
     await onboard(page, { name: 'Cash', balance: '8500', target: '25000' }).catch(() => undefined);
+    // v1.2.2: name prompt, then the greeting and the graph's empty state
+    await shot(page, scheme, '02b-name-prompt');
+    await page.getByRole('region', { name: 'Your name' }).getByPlaceholder('Your name').fill('Rishab');
+    await page.getByRole('region', { name: 'Your name' }).getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('tab', { name: 'Graph' }).click();
+    await shot(page, scheme, '02c-graph-empty');
+    await page.getByRole('tab', { name: 'Balance' }).click();
 
     // seed a realistic month
     await addAccount(page, 'NIC Asia', 'Bank', '125000');
@@ -69,6 +76,19 @@ for (const scheme of SCHEMES) {
     await page.evaluate(() => window.scrollTo(0, 0));
 
     await shot(page, scheme, '03-home');
+    // v1.2.2: profit graph (green), then scrubbing
+    await page.getByRole('tab', { name: 'Graph' }).click();
+    await page.getByRole('button', { name: '1W' }).click();
+    await page.waitForTimeout(800); // let the line finish drawing in
+    await shot(page, scheme, '03b-graph-profit');
+    const chart = page.getByTestId('profit-chart');
+    const cb = (await chart.boundingBox())!;
+    await page.mouse.move(cb.x + cb.width * 0.2, cb.y + cb.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(cb.x + cb.width * 0.55, cb.y + cb.height / 2, { steps: 3 });
+    await shot(page, scheme, '03c-graph-scrub');
+    await page.mouse.up();
+    await page.getByRole('tab', { name: 'Balance' }).click();
     await page.evaluate(() => window.scrollTo(0, 420));
     await shot(page, scheme, '04-home-scrolled');
     await page.evaluate(() => window.scrollTo(0, 0));
@@ -234,5 +254,34 @@ for (const scheme of SCHEMES) {
     await shot(page, scheme, '16-kit', true);
     await page.getByRole('button', { name: 'Open sheet' }).click();
     await shot(page, scheme, '17-kit-sheet');
+  });
+}
+
+for (const scheme of SCHEMES) {
+  test(`home graph in a loss (${scheme})`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await onboard(page, { name: 'Cash', balance: '20000' });
+    await page.getByRole('region', { name: 'Your name' }).getByPlaceholder('Your name').fill('Rishab');
+    await page.getByRole('region', { name: 'Your name' }).getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Add transaction', exact: true }).click();
+    // up for a few days, then a big spend today: the line crosses zero from green to red
+    const day = (n: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() - n);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+    const sheet = page.getByRole('dialog', { name: 'Add transaction' });
+    for (const [n, kind, amt, cat] of [[4, 'Income', '3000', 'Salary'], [3, 'Expense', '800', 'Food'], [2, 'Income', '1200', 'Gift'], [1, 'Expense', '1500', 'Transport']] as const) {
+      await sheet.getByRole('tab', { name: kind }).click();
+      await typeAmount(page, amt);
+      await sheet.getByRole('radio', { name: cat }).click();
+      await sheet.getByLabel('Pick date').fill(day(n));
+      await sheet.getByRole('button', { name: 'Save & add another' }).click();
+    }
+    await addTx(page, 'Expense', '6400', 'Shopping');
+    await page.getByRole('dialog', { name: 'Add transaction' }).getByRole('button', { name: 'Cancel' }).click();
+    await page.getByRole('tab', { name: 'Graph' }).click();
+    await page.waitForTimeout(800); // let the line finish drawing in
+    await shot(page, scheme, '03d-graph-loss');
   });
 }
