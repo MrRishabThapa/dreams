@@ -61,6 +61,7 @@ Screenshots are from the iPhone X layout (375×812) with made-up demo data.
 **Money**
 - Accounts of five kinds: cash, bank, e-wallet, savings, investment. Correct a balance or update an investment's value without faking income or spending.
 - Expenses, income and transfers in **3 taps or fewer**, with a custom keypad that does sums (`250+120×2`), recent-first categories, and Today / Yesterday / any date.
+- **24 expense categories** out of the box (Repairs & Maintenance, Watch & Accessories, Subscriptions, Fees & Charges…). The picker shows the 10 you use most, with **More** and a search box for the rest, and a **New** tile to make your own (name, icon, colour) without leaving the entry. (v1.2.1)
 - Edit by tapping, swipe left to delete, and **Undo** everything.
 - Amounts in **NPR with lakh/crore grouping** (`Rs 1,20,000`). Every amount is stored as whole paisa, never as a float.
 
@@ -213,6 +214,8 @@ deletes local data.
 | `npm run demo` | Write a dev-only demo year as `demo-backup.json` |
 | `npm run icons` | Regenerate every icon and launch image from `public/logo.png` |
 
+**Releases:** every release adds an entry at the top of `src/data/patchNotes.ts` (shown in Settings → Patch notes) and bumps `package.json` to the same version. The unit tests and the build fail if they disagree. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 Screenshots for review: `SHOTS=1 npx playwright test e2e/screenshots.spec.ts e2e/screenshots-demo.spec.ts e2e/screenshots-sync.spec.ts`.
 
 On **Arch Linux**, run `scripts/setup-webkit-arch.sh` once so Playwright's WebKit can start (no sudo).
@@ -221,15 +224,15 @@ On **Arch Linux**, run `scripts/setup-webkit-arch.sh` once so Playwright's WebKi
 
 ## Testing
 
-- **125 unit tests** (Vitest): money and date rules, balances, debts, dreams, the audit, backup/restore,
+- **138 unit tests** (Vitest): money and date rules, balances, debts, dreams, the audit, backup/restore,
   app lock and Face ID (mocked authenticator), the statement importer (mapping, debit/credit sign,
-  paisa rounding, dedupe, category rules), wallet reconcile and audit math, sync against a fake server that behaves like the real schema (two devices, stale edits,
+  paisa rounding, dedupe, category rules), default-category migration (idempotent, two devices, renames kept), patch notes vs package.json, wallet reconcile and audit math, sync against a fake server that behaves like the real schema (two devices, stale edits,
   a failed batch, deletes), a real build with environment variables, and a performance budget.
   A property test checks the net-worth reconciliation on 300 random ledgers. A full demo year must
   reconcile in every month, and closing then reopening each month must match its snapshot.
-- **20 end-to-end flows** (Playwright WebKit, iPhone X): onboarding, 3-tap add, 20 transactions
+- **23 end-to-end flows** (Playwright WebKit, iPhone X): onboarding, 3-tap add, 20 transactions
   **offline**, debts, dreams, month close, backup → erase → restore, app lock, Face ID and
-  Forgot PIN, eSewa reconcile and CSV / paste import, the category editor,
+  Forgot PIN, eSewa reconcile and CSV / paste import, the category editor, the category picker (More, search, New) and Patch notes,
   the offline → online sync banner (mocked Supabase), and a two-theme reduced-motion tour that
   fails on any console error.
 
@@ -246,6 +249,7 @@ src/
   sheets/      forms and detail screens (add, accounts, debts, dreams, settings, sync…)
   screens/     tabs: Home, Money, Dreams, Audit; onboarding; /_kit design gallery
   lib/         app state, catalog, motion, app lock
+  data/        patch notes (one typed entry per release)
 e2e/           Playwright tests and screenshot specs
 scripts/       icons, demo year, build env check, WebKit setup for Arch
 supabase/      schema.sql
