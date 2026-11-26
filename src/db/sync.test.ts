@@ -5,6 +5,9 @@ import { ensureSyncSlots, getSyncCursor, pendingChanges, setSyncCursor } from '.
 import { addDreamMoney, createAccount, createDebt, createDream, ensureSettings, saveTransaction, seedCategories, softDelete } from './repo';
 import { restoreBackup, buildBackup } from './backup';
 import { demoYear } from '../../scripts/demo-year.mjs';
+import { setAutoLock, setFaceId, setPin } from '../lib/lock';
+import { toRemote } from '../sync/engine';
+import { NEWER_COLUMNS } from '../sync/schema';
 
 // v4 from crypto.randomUUID(); v5-shaped stable ids for default categories
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[45][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -23,6 +26,9 @@ function schemaColumns(): Record<string, string[]> {
   }
   return out;
 }
+
+/** the user_settings columns the app writes: schema.sql minus server-only ones */
+const cols = (t: string[]) => schemaColumns()[t[0]].filter((c) => !['user_id', 'server_modified_at', 'display_name'].includes(c)).sort();
 
 beforeEach(async () => {
   await Promise.all([...SYNCED_TABLES.map((t) => (db[t] as any).clear()), db.meta.clear()]);
@@ -47,6 +53,29 @@ describe('sync readiness (no network)', () => {
     for (const t of SYNCED_TABLES) {
       for (const row of b.tables[t]) for (const k of Object.keys(row)) expect(cols[t], `${t}.${k} missing in schema.sql`).toContain(k);
     }
+  });
+
+  it('every newer column is in schema.sql, both in its table and in the idempotent schema-changes block', () => {
+    const cols = schemaColumns();
+    for (const c of NEWER_COLUMNS) {
+      expect(cols[c.table]).toContain(c.column);
+      expect(sql).toContain(`alter table public.${c.table} add column if not exists ${c.column}`);
+    }
+    expect(sql.trimEnd().endsWith("notify pgrst, 'reload schema';")).toBe(true);
+  });
+
+  it('device-local lock settings (PIN hash, Face ID credential, timeout) never reach user_settings or the sync payload', async () => {
+    const s = await ensureSettings();
+    await setPin('123456', 60_000);
+    await setFaceId('cred-abc');
+    await setAutoLock(300_000);
+    const row = (await db.user_settings.get(s.id))!;
+    const payload = JSON.stringify(toRemote(row as unknown as Record<string, unknown>));
+    for (const k of ['pin', 'hash', 'salt', 'faceId', 'cred-abc', 'autoLock', '300000']) expect(payload).not.toContain(k);
+    expect(Object.keys(toRemote(row as unknown as Record<string, unknown>)).sort()).toEqual(cols(['user_settings']));
+    // they live in meta, which is not a synced table
+    expect((SYNCED_TABLES as readonly string[]).includes('meta')).toBe(false);
+    expect(await db.meta.get('appLock')).toBeTruthy();
   });
 
   it('every write stamps a uuid, timestamps and the dirty flag; soft delete syncs like an edit', async () => {
