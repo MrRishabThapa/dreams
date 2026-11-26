@@ -5,6 +5,7 @@ import { Button, NavButton } from '../ui/Button';
 import { Group, Row } from '../ui/List';
 import { Toggle } from '../ui/bits';
 import { SyncChip } from '../ui/SyncChip';
+import { schemaFixSQL } from '../sync/schema';
 import { useToast } from '../ui/Toast';
 import { useActionSheet } from '../ui/ActionSheet';
 import { useApp } from '../lib/app';
@@ -117,8 +118,25 @@ export function SyncSheet({ open, onClose, z }: { open: boolean; onClose: () => 
             <Row title="Status" value={<SyncChip />} />
             <Row title="Last synced" value={when(s.lastSyncedAt)} />
             <Row title="Changes to send" value={<span className="tnum" data-testid="sync-pending">{s.pending}</span>} />
+            <Row
+              title="Server"
+              value={
+                <span data-testid="sync-server" className={s.schemaMissing?.length ? 'font-medium text-expense' : ''}>
+                  {s.schemaMissing === null ? '—' : s.schemaMissing.length ? 'Needs an update' : 'Up to date'}
+                </span>
+              }
+            />
           </Group>
-          {s.error && s.error.kind !== 'offline' && (
+          {!!s.schemaMissing?.length && (
+            <div className="mx-4 mt-3 rounded-ctl bg-[color-mix(in_srgb,var(--expense)_10%,transparent)] p-3" role="alert" data-testid="sync-schema">
+              <p className="text-footnote font-semibold text-expense">Server needs an update: run the schema SQL</p>
+              <p className="mt-1 text-footnote text-label-2">
+                Missing: {s.schemaMissing.join(', ')}. In Supabase → SQL editor, run this once. Your changes stay on this iPhone and sync afterwards.
+              </p>
+              <pre className="mt-2 overflow-x-auto whitespace-pre rounded-[8px] bg-surface p-2 text-[12px] leading-[17px] text-label">{schemaFixSQL()}</pre>
+            </div>
+          )}
+          {s.error && s.error.kind !== 'offline' && !(s.error.kind === 'schema' && s.schemaMissing?.length) && (
             <p className="mx-8 mt-2 text-footnote font-medium text-expense" role="alert" data-testid="sync-error">{s.error.message}</p>
           )}
           {!s.online && <p className="mx-8 mt-2 text-footnote text-label-2">You’re offline. Changes are saved here and sync when you’re back online.</p>}
