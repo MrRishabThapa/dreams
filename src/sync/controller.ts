@@ -177,7 +177,8 @@ export function storedEmail(): string | null {
  */
 export async function reauthenticate(email: string, password: string): Promise<string | null> {
   if (!state.configured) return 'Sync isn’t set up in this build.';
-  if (!navigator.onLine) return 'You’re offline. Connect to the internet to reset your PIN.';
+  // no navigator.onLine pre-check: it can read false while online; a real network failure
+  // still comes back as a plain message from signInMessage
   const mine = storedEmail();
   if (mine && mine.toLowerCase() !== email.trim().toLowerCase()) return 'Use the email this iPhone syncs with.';
   try {
