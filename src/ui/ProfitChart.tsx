@@ -148,13 +148,13 @@ export function ProfitChart({ series, symbol, sinceLabel }: { series: ProfitSeri
           {cx !== null && (
             <g>
               <line x1={cx} x2={cx} y1={0} y2={H} stroke="var(--label-2)" strokeWidth={1} />
-              <circle cx={cx} cy={geo.y(shown.profit)} r={5.5} fill={up ? 'var(--gain)' : 'var(--loss)'} stroke="var(--frost-solid)" strokeWidth={2.5} />
+              <circle cx={cx} cy={geo.y(shown.profit)} r={5.5} fill={up ? 'var(--gain)' : 'var(--loss)'} stroke="var(--surface)" strokeWidth={2.5} />
             </g>
           )}
         </svg>
         {active !== null && (
           <div
-            className="pointer-events-none absolute top-1 w-[156px] rounded-[12px] bg-[var(--frost-solid)] px-2.5 py-1.5 text-caption shadow-float"
+            className="pointer-events-none absolute top-1 w-[156px] rounded-[12px] bg-surface px-2.5 py-1.5 text-caption shadow-float"
             style={{ left: tipLeft }}
             data-testid="profit-tooltip"
           >

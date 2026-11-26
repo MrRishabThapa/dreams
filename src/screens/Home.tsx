@@ -124,7 +124,6 @@ export function Home() {
 
   return (
     <Page
-      barBlur={false}
       title={greeting}
       heading={
         name ? (
@@ -180,9 +179,9 @@ export function Home() {
         </button>
       )}
 
-      {/* main card: net worth, or the profit graph (frosted; with the tab bar, the page's 2 blurred surfaces) */}
-      <div className="frost-wrap mx-4">
-        <section className="frost p-5" aria-label={view === 'graph' ? 'Profit graph' : 'Net worth'}>
+      {/* main card: net worth, or the profit graph (plain card, like the others) */}
+      <div className="mx-4">
+        <section className="card p-5" aria-label={view === 'graph' ? 'Profit graph' : 'Net worth'}>
           <Segmented
             value={view}
             onChange={setView}
@@ -351,7 +350,7 @@ function heroSize(text: string): string {
 
 function Stat({ label, value, onPress }: { label: string; value: number; onPress?: () => void }) {
   return (
-    <button type="button" onClick={onPress} className="pressable min-w-0 rounded-ctl bg-fill px-3 py-2 text-left">
+    <button type="button" onClick={onPress} className="pressable min-w-0 rounded-ctl bg-surface-2 px-3 py-2 text-left">
       <div className="truncate text-caption font-medium text-label-2">{label}</div>
       <Money value={value} animated compact className="block truncate text-subhead font-semibold" />
     </button>
