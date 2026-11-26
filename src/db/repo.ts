@@ -1,7 +1,7 @@
 import { db, type SyncedTable } from './db';
 import { emitWrite } from './events';
-import type { Account, Audit, Base, Category, Debt, Dream, DreamEntry, ISODate, Minor, Month, Transaction, UserSettings } from '../domain/types';
-import { DEFAULT_CATEGORIES, KIND_META } from '../lib/catalog';
+import type { Account, Audit, Base, Category, CategoryType, Debt, Dream, DreamEntry, ISODate, Minor, Month, Transaction, UserSettings } from '../domain/types';
+import { DEFAULT_CATEGORIES, KIND_META, type DefaultCategory } from '../lib/catalog';
 import { today } from '../domain/dates';
 import { debtRemaining } from '../domain/ledger';
 import { debtTxType } from '../domain/debts';
@@ -78,13 +78,65 @@ export async function ensureSettings(): Promise<UserSettings> {
   }) as Promise<UserSettings>;
 }
 
+/** Stamp for default category rows: older than any real edit, so a rename made on another device always wins. */
+export const DEFAULT_CATEGORY_STAMP = '2026-11-26T00:00:00.000Z';
+
+const normName = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+
+/**
+ * Same id on every device for the same default category, so two devices that each seed or
+ * migrate never create duplicates (sync upserts on id). UUID-shaped from SHA-256 of type + name.
+ */
+export async function stableCategoryId(type: CategoryType, name: string): Promise<string> {
+  const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`dreams:category:${type}:${normName(name)}`))).slice(0, 16);
+  bytes[6] = (bytes[6] & 0x0f) | 0x50;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const h = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
+async function defaultRow(c: DefaultCategory, sort: number): Promise<Category> {
+  return {
+    id: await stableCategoryId(c.type, c.name),
+    name: c.name, type: c.type, icon: c.icon, color: c.color, sort,
+    created_at: DEFAULT_CATEGORY_STAMP, updated_at: DEFAULT_CATEGORY_STAMP, deleted_at: null, dirty: 1,
+  };
+}
+
 export async function seedCategories(): Promise<void> {
   const count = await db.categories.count();
   if (count > 0) return;
-  let sort = 0;
+  const sort = { income: 0, expense: 0 };
+  const rows: Category[] = [];
+  for (const c of DEFAULT_CATEGORIES) rows.push(await defaultRow(c, sort[c.type]++));
+  await db.categories.bulkPut(rows);
+  emitWrite();
+}
+
+/**
+ * Adds the default categories an existing install doesn't have yet. Idempotent: a default is
+ * skipped when its stable id exists (even deleted or renamed) or any category of that type,
+ * deleted ones included, has its name or an alias. Existing rows are never changed.
+ * New ones go after the current list, so the picker's first tiles stay as they were.
+ */
+export async function migrateCategories(): Promise<Category[]> {
+  const all = await db.categories.toArray();
+  if (all.length === 0) return []; // not set up yet: onboarding seeds the full list
+  const ids = new Set(all.map((c) => c.id));
+  const names = new Set(all.map((c) => `${c.type}:${normName(c.name)}`));
+  const next = { income: 0, expense: 0 };
+  for (const c of all) if (!c.deleted_at) next[c.type] = Math.max(next[c.type], c.sort + 1);
+  const rows: Category[] = [];
   for (const c of DEFAULT_CATEGORIES) {
-    await save('categories', { name: c.name, type: c.type, icon: c.icon, color: c.color, sort: sort++ } as Partial<Category>);
+    const id = await stableCategoryId(c.type, c.name);
+    if (ids.has(id) || [c.name, ...(c.aliases ?? [])].some((n) => names.has(`${c.type}:${normName(n)}`))) continue;
+    rows.push(await defaultRow(c, next[c.type]++));
   }
+  if (rows.length) {
+    await db.categories.bulkPut(rows);
+    emitWrite();
+  }
+  return rows;
 }
 
 /* ---------- Accounts ---------- */
