@@ -9,6 +9,7 @@ export type SheetReq =
   | { kind: 'account'; account?: Account }
   | { kind: 'accountDetail'; id: string }
   | { kind: 'correct'; account: Account }
+  | { kind: 'import'; accountId: string }
   | { kind: 'pickAccount'; title: string; exclude?: string; onPick: (id: string) => void }
   | { kind: 'settings' }
   | { kind: 'debt'; debt?: Debt; direction?: Debt['direction'] }
