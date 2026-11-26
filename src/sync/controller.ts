@@ -14,6 +14,7 @@ import { AUTH_STORAGE_KEY, SUPABASE_KEY, SUPABASE_URL, syncConfigured } from './
 import { classify, signInMessage, type SyncError } from './errors';
 import { pendingCount, syncAll } from './engine';
 import { supabaseRemote } from './remote';
+import { NEWER_COLUMNS } from './schema';
 
 export interface SyncState {
   configured: boolean;
@@ -26,6 +27,8 @@ export interface SyncState {
   online: boolean;
   /** the "Sync N changes?" banner was dismissed with Later (until the next online event or open) */
   dismissed: boolean;
+  /** newer columns the server lacks (`table.column`); null until checked */
+  schemaMissing: string[] | null;
 }
 
 let state: SyncState = {
@@ -37,6 +40,7 @@ let state: SyncState = {
   error: null,
   online: typeof navigator === 'undefined' ? true : navigator.onLine,
   dismissed: false,
+  schemaMissing: null,
 };
 const subs = new Set<() => void>();
 const set = (p: Partial<SyncState>) => {
@@ -93,7 +97,16 @@ export function syncNow(): Promise<void> {
     set({ syncing: true, error: null });
     try {
       const sb = await client();
-      const r = await syncAll(supabaseRemote(sb));
+      const remote = supabaseRemote(sb);
+      // once per app start, and again while something is missing (so it clears after the fix)
+      if (state.schemaMissing === null || state.schemaMissing.length) {
+        try {
+          set({ schemaMissing: await remote.missingColumns!(NEWER_COLUMNS) });
+        } catch {
+          /* offline/auth/etc.: the sync below reports it */
+        }
+      }
+      const r = await syncAll(remote);
       set({ error: r.error, lastSyncedAt: r.error ? state.lastSyncedAt : new Date().toISOString() });
       if (r.error?.kind === 'offline') set({ online: false });
     } catch (e) {
