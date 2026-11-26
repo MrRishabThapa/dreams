@@ -105,6 +105,14 @@ pick the `.json` file (Files or iCloud Drive on iPhone; Files or Drive on Androi
 Run `npm run deploy` again (or push, with option B). Next time Dreams opens online it shows
 **Update available · Reload**; tap Reload. Your data is untouched by updates.
 
+**Database changes:** some releases add a column to Supabase. Run the matching file from
+[`supabase/migrations/`](supabase/migrations/) in the Supabase SQL editor **before** using the new
+feature on a synced device (a fresh project just runs `supabase/schema.sql`, which already has it).
+
+| Release | Run | Needed for |
+|---|---|---|
+| v1.2.2 | `20261126_user_settings_display_name.sql` (adds `user_settings.display_name`) | the name in the Home greeting. Until it's run, setting a name makes sync show an error: other changes still upload, but nothing downloads from your other devices. Nothing is lost; it all syncs once the column exists. |
+
 ## Sync (v1.1): the first real sync
 
 Supabase is already set up (schema run, one user, sign-ups off). On the iPhone:
